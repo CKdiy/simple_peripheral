@@ -1,0 +1,13 @@
+"C:\IAR\arm\bin\armproc.dll" 
+
+"C:\IAR\arm\bin\armxds2.dll" 
+
+"E:\BeelinkerCode\simple_peripheral\Projet\cc2650em\simple_peripheral\iar\app\FlashROM\Exe\simple_peripheral_cc2650em_app.out" 
+
+--plugin "C:\IAR\arm\bin\armbat.dll" 
+
+--device_macro "C:\IAR\arm\config\debugger\TexasInstruments\CC26x0.dmac" 
+
+
+
+

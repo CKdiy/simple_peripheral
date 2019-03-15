@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<settings>
+    <Stack>
+        <FillEnabled>0</FillEnabled>
+        <OverflowWarningsEnabled>1</OverflowWarningsEnabled>
+        <WarningThreshold>90</WarningThreshold>
+        <SpWarningsEnabled>1</SpWarningsEnabled>
+        <WarnLogOnly>1</WarnLogOnly>
+        <UseTrigger>1</UseTrigger>
+        <TriggerName>main</TriggerName>
+        <LimitSize>0</LimitSize>
+        <ByteLimit>50</ByteLimit>
+    </Stack>
+    <XdsDriver>
+        <xds100v3serialNo>TIZ0RPO2</xds100v3serialNo>
+        <xds100v3foundProbes />
+        <xdsResetStyle>0</xdsResetStyle>
+        <xdsResetStrategy>3</xdsResetStrategy>
+        <CStepIntDis>_ 0</CStepIntDis>
+        <LeaveTargetRunning>_ 0</LeaveTargetRunning>
+    </XdsDriver>
+    <DebugChecksum>
+        <Checksum>898848040</Checksum>
+    </DebugChecksum>
+    <Exceptions>
+        <StopOnUncaught>_ 0</StopOnUncaught>
+        <StopOnThrow>_ 0</StopOnThrow>
+    </Exceptions>
+    <CallStack>
+        <ShowArgs>0</ShowArgs>
+    </CallStack>
+    <Disassembly>
+        <MixedMode>1</MixedMode>
+    </Disassembly>
+    <PowerLog>
+        <Title_0>Energy</Title_0>
+        <Symbol_0>0 4 0</Symbol_0>
+        <Title_1>Voltage</Title_1>
+        <Symbol_1>0 4 0</Symbol_1>
+        <Title_2>Current</Title_2>
+        <Symbol_2>0 4 0</Symbol_2>
+        <LogEnabled>0</LogEnabled>
+        <GraphEnabled>0</GraphEnabled>
+        <ShowTimeLog>1</ShowTimeLog>
+        <LiveEnabled>0</LiveEnabled>
+        <LiveFile>PowerLogLive.log</LiveFile>
+    </PowerLog>
+    <StateLog>
+        <LogEnabled>0</LogEnabled>
+        <GraphEnabled>0</GraphEnabled>
+        <ShowTimeLog>1</ShowTimeLog>
+        <SumEnabled>0</SumEnabled>
+        <ShowTimeSum>1</ShowTimeSum>
+        <StateSumSortOrder>0</StateSumSortOrder>
+    </StateLog>
+    <LogFile>
+        <LoggingEnabled>_ 0</LoggingEnabled>
+        <LogFile>_ ""</LogFile>
+        <Category>_ 0</Category>
+    </LogFile>
+    <TermIOLog>
+        <LoggingEnabled>_ 0</LoggingEnabled>
+        <LogFile>_ ""</LogFile>
+    </TermIOLog>
+    <CallStackLog>
+        <Enabled>0</Enabled>
+    </CallStackLog>
+    <CallStackStripe>
+        <ShowTiming>1</ShowTiming>
+    </CallStackStripe>
+    <PowerProbe>
+        <Frequency>10000</Frequency>
+        <Probe0>Current</Probe0>
+        <ProbeSetup0>0 1 1 2 0 0</ProbeSetup0>
+        <Probe1>Voltage</Probe1>
+        <ProbeSetup1>1 1 1 4 0 0</ProbeSetup1>
+        <Probe2>Energy</Probe2>
+        <ProbeSetup2>4 1 1 10 0 0</ProbeSetup2>
+    </PowerProbe>
+    <DisassembleMode>
+        <mode>0</mode>
+    </DisassembleMode>
+    <Breakpoints2>
+        <Bp0>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\..\..\..\src\examples\simple_peripheral\cc26xx\app\simple_peripheral.c}.432.3" 0 0 1 "" 0 "" 0</Bp0>
+        <Bp1>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\..\..\..\src\examples\simple_peripheral\cc26xx\app\simple_peripheral.c}.1246.2" 0 0 1 "" 0 "" 0</Bp1>
+        <Bp2>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\..\..\..\..\src\examples\simple_peripheral\cc26xx\app\simple_peripheral.c}.1262.5" 0 0 1 "" 0 "" 0</Bp2>
+        <Count>3</Count>
+    </Breakpoints2>
+    <Aliases>
+        <A0>_ "C:\Jenkins\jobs\FWGroup-DriverLib\workspace\modules\output\cc26xx_cha_2_2_ext\driverlib\rfc.c" ""</A0>
+        <A1>_ "C:\Jenkins\jobs\FWGroup-DriverLib\workspace\modules\output\cc26xx_cha_2_2_ext\driverlib\rfc.h" ""</A1>
+        <A2>_ "C:\Program Files (x86)\IAR Systems\IAR EWARMv7.60.1\arm\inc\c\DLib_Product_string.h" ""</A2>
+        <Count>3</Count>
+        <SuppressDialog>0</SuppressDialog>
+    </Aliases>
+</settings>

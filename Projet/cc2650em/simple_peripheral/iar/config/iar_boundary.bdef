@@ -1,0 +1,10 @@
+/*
+** Stack Frontier Generator 1.1.0 (2018-11-20 19:46:24.533000)
+**
+** WARNING - Auto-generated file. Modifications could be lost!
+*/
+
+-D ICALL_STACK0_ADDR=0x0000fda5
+-D ICALL_STACK0_START=0x0000fda4
+-D ICALL_RAM0_START=0x20004328
+
