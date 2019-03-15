@@ -73,8 +73,6 @@ bleUserCfg_t user0Cfg = BLE_USER_CFG;
 
 #endif // USE_DEFAULT_USER_CFG
 
-#include <ti/mw/display/Display.h>
-
 #ifdef USE_FPGA
 #include <inc/hw_prcm.h>
 #endif // USE_FPGA
@@ -132,7 +130,6 @@ PIN_Handle radCtrlHandle;
 
 extern void AssertHandler(uint8 assertCause, uint8 assertSubcause);
 
-extern Display_Handle dispHandle;
 
 /*******************************************************************************
  * @fn          Main
@@ -247,45 +244,29 @@ int main()
  */
 void AssertHandler(uint8 assertCause, uint8 assertSubcause)
 {
-  // Open the display if the app has not already done so
-  if ( !dispHandle )
-  {
-    dispHandle = Display_open(Display_Type_LCD, NULL);
-  }
-
-  Display_print0(dispHandle, 0, 0, ">>>STACK ASSERT");
-
   // check the assert cause
   switch (assertCause)
   {
     case HAL_ASSERT_CAUSE_OUT_OF_MEMORY:
-      Display_print0(dispHandle, 0, 0, "***ERROR***");
-      Display_print0(dispHandle, 2, 0, ">> OUT OF MEMORY!");
       break;
 
     case HAL_ASSERT_CAUSE_INTERNAL_ERROR:
       // check the subcause
       if (assertSubcause == HAL_ASSERT_SUBCAUSE_FW_INERNAL_ERROR)
       {
-        Display_print0(dispHandle, 0, 0, "***ERROR***");
-        Display_print0(dispHandle, 2, 0, ">> INTERNAL FW ERROR!");
+        ;		
       }
       else
       {
-        Display_print0(dispHandle, 0, 0, "***ERROR***");
-        Display_print0(dispHandle, 2, 0, ">> INTERNAL ERROR!");
+		;
       }
       break;
 
     case HAL_ASSERT_CAUSE_ICALL_ABORT:
-      Display_print0(dispHandle, 0, 0, "***ERROR***");
-      Display_print0(dispHandle, 2, 0, ">> ICALL ABORT!");
       HAL_ASSERT_SPINLOCK;
       break;
 
     default:
-      Display_print0(dispHandle, 0, 0, "***ERROR***");
-      Display_print0(dispHandle, 2, 0, ">> DEFAULT SPINLOCK!");
       HAL_ASSERT_SPINLOCK;
   }
 

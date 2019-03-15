@@ -211,7 +211,7 @@
                 <debug>1</debug>
                 <option>
                     <name>CCDefines</name>
-                    <state>BOARD_DISPLAY_EXCLUDE_UART</state>
+                    <state>xBOARD_DISPLAY_EXCLUDE_UART</state>
                     <state>CC2650DK_4XS</state>
                     <state>CC26XX</state>
                     <state>GAPROLE_TASK_STACK_SIZE=440</state>
