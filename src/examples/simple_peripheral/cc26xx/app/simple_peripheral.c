@@ -209,41 +209,13 @@ Char sbpTaskStack[SBP_TASK_STACK_SIZE];
 // GAP - SCAN RSP data (max size = 31 bytes)
 static uint8_t scanRspData[] =
 {
-  // complete name
-  0x14,   // length of this data
-  GAP_ADTYPE_LOCAL_NAME_COMPLETE,
-  'S',
-  'i',
-  'm',
-  'p',
-  'l',
-  'e',
-  'B',
-  'L',
-  'E',
-  'P',
-  'e',
-  'r',
-  'i',
-  'p',
-  'h',
-  'e',
-  'r',
-  'a',
-  'l',
-
-  // connection interval range
-  0x05,   // length of this data
-  GAP_ADTYPE_SLAVE_CONN_INTERVAL_RANGE,
-  LO_UINT16(DEFAULT_DESIRED_MIN_CONN_INTERVAL),   // 100ms
-  HI_UINT16(DEFAULT_DESIRED_MIN_CONN_INTERVAL),
-  LO_UINT16(DEFAULT_DESIRED_MAX_CONN_INTERVAL),   // 1s
-  HI_UINT16(DEFAULT_DESIRED_MAX_CONN_INTERVAL),
-
-  // Tx power level
-  0x02,   // length of this data
-  GAP_ADTYPE_POWER_LEVEL,
-  0       // 0dBm
+  0x03,0x03,0xF0,0xFF,
+  0x0A,0x09,'B','e','e','L','i','n','k','e','r',
+  0x09,0x16,
+  0x78,0x25,      //UUID
+  0x27,0x14,
+  0x36,0xC5,     //major minor
+  0x81,0x01      //µÁ≥ÿµÁ¡ø
 };
 
 // GAP - Advertisement data (max size = 31 bytes, though this is
@@ -256,27 +228,19 @@ static uint8_t advertData[] =
   0x02,   // length of this data
   GAP_ADTYPE_FLAGS,
   DEFAULT_DISCOVERABLE_MODE | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
-
-  // service UUID, to notify central devices what services are included
-  // in this peripheral
-#if !defined(FEATURE_OAD) || defined(FEATURE_OAD_ONCHIP)
-  0x03,   // length of this data
-#else //OAD for external flash
-  0x05,  // lenght of this data
-#endif //FEATURE_OAD
-  GAP_ADTYPE_16BIT_MORE,      // some of the UUID's, but not all
-#ifdef FEATURE_OAD
-  LO_UINT16(OAD_SERVICE_UUID),
-  HI_UINT16(OAD_SERVICE_UUID),
-#endif //FEATURE_OAD
-#ifndef FEATURE_OAD_ONCHIP
-  LO_UINT16(SIMPLEPROFILE_SERV_UUID),
-  HI_UINT16(SIMPLEPROFILE_SERV_UUID)
-#endif //FEATURE_OAD_ONCHIP
+  0x1A, 0xFF, 
+  0x4C, 0x00, //Company identifier code (Default is 0x0030 - STMicroelectronics: To be customized for specific identifier)
+  0x02,       // ID
+  0x15,       //Length of the remaining payload
+  0xFD, 0xA5, 0x06, 0x93, 0xA4, 0xE2, 0x4F, 0xB1, //Location UUID
+  0xAF, 0xCF, 0xC6, 0xEB, 0x07, 0x64, 0x78, 0x25,
+  0x27, 0x14, // Major number 
+  0x36, 0xCD, // Minor number 
+  0xB5 //(-75dB)
 };
 
 // GAP GATT Attributes
-static uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "Simple BLE Peripheral";
+static uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "Beelinker";
 
 // Globals used for ATT Response retransmission
 static gattMsgEvent_t *pAttRsp = NULL;
@@ -327,13 +291,6 @@ extern void AssertHandler(uint8 assertCause, uint8 assertSubcause);
 static gapRolesCBs_t SimpleBLEPeripheral_gapRoleCBs =
 {
   SimpleBLEPeripheral_stateChangeCB     // Profile State Change Callbacks
-};
-
-// GAP Bond Manager Callbacks
-static gapBondCBs_t simpleBLEPeripheral_BondMgrCBs =
-{
-  NULL, // Passcode callback (not used by application)
-  NULL  // Pairing / Bonding state Callback (not used by application)
 };
 
 // Simple GATT Profile Callbacks
@@ -461,23 +418,7 @@ static void SimpleBLEPeripheral_init(void)
     GAP_SetParamValue(TGAP_GEN_DISC_ADV_INT_MAX, advInt);
   }
 
-  // Setup the GAP Bond Manager
-  {
-    uint32_t passkey = 0; // passkey "000000"
-    uint8_t pairMode = GAPBOND_PAIRING_MODE_WAIT_FOR_REQ;
-    uint8_t mitm = TRUE;
-    uint8_t ioCap = GAPBOND_IO_CAP_DISPLAY_ONLY;
-    uint8_t bonding = TRUE;
-
-    GAPBondMgr_SetParameter(GAPBOND_DEFAULT_PASSCODE, sizeof(uint32_t),
-                            &passkey);
-    GAPBondMgr_SetParameter(GAPBOND_PAIRING_MODE, sizeof(uint8_t), &pairMode);
-    GAPBondMgr_SetParameter(GAPBOND_MITM_PROTECTION, sizeof(uint8_t), &mitm);
-    GAPBondMgr_SetParameter(GAPBOND_IO_CAPABILITIES, sizeof(uint8_t), &ioCap);
-    GAPBondMgr_SetParameter(GAPBOND_BONDING_ENABLED, sizeof(uint8_t), &bonding);
-  }
-
-   // Initialize GATT attributes
+  // Initialize GATT attributes
   GGS_AddService(GATT_ALL_SERVICES);           // GAP
   GATTServApp_AddService(GATT_ALL_SERVICES);   // GATT attributes
   DevInfo_AddService();                        // Device Information Service
@@ -523,9 +464,6 @@ static void SimpleBLEPeripheral_init(void)
 
   // Start the Device
   VOID GAPRole_StartDevice(&SimpleBLEPeripheral_gapRoleCBs);
-
-  // Start Bond Manager
-  VOID GAPBondMgr_Register(&simpleBLEPeripheral_BondMgrCBs);
 
   // Register with GAP for HCI/Host messages
   GAP_RegisterForMsgs(selfEntity);
