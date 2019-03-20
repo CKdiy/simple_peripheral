@@ -209,9 +209,14 @@ Char sbpTaskStack[SBP_TASK_STACK_SIZE];
 // GAP - SCAN RSP data (max size = 31 bytes)
 static uint8_t scanRspData[] =
 {
-  0x03,0x03,0xF0,0xFF,
-  0x0A,0x09,'B','e','e','L','i','n','k','e','r',
-  0x09,0x16,
+  0x03,
+  GAP_ADTYPE_16BIT_COMPLETE,
+  0xF0,0xFF,
+  0x0A,
+  GAP_ADTYPE_LOCAL_NAME_COMPLETE,
+  'B','e','e','L','i','n','k','e','r',
+  0x09,
+  GAP_ADTYPE_SERVICE_DATA,
   0x78,0x25,      //UUID
   0x27,0x14,
   0x36,0xC5,     //major minor
@@ -809,25 +814,9 @@ static void SimpleBLEPeripheral_processStateChangeEvt(gaprole_States_t newState)
     case GAPROLE_STARTED:
       {
         uint8_t ownAddress[B_ADDR_LEN];
-        uint8_t systemId[DEVINFO_SYSTEM_ID_LEN];
 
         GAPRole_GetParameter(GAPROLE_BD_ADDR, ownAddress);
-
-        // use 6 bytes of device address for 8 bytes of system ID value
-        systemId[0] = ownAddress[0];
-        systemId[1] = ownAddress[1];
-        systemId[2] = ownAddress[2];
-
-        // set middle bytes to zero
-        systemId[4] = 0x00;
-        systemId[3] = 0x00;
-
-        // shift three bytes up
-        systemId[7] = ownAddress[5];
-        systemId[6] = ownAddress[4];
-        systemId[5] = ownAddress[3];
-
-        DevInfo_SetParameter(DEVINFO_SYSTEM_ID, DEVINFO_SYSTEM_ID_LEN, systemId);
+        DevInfo_SetParameter(DEVINFO_BTADDRESS, B_ADDR_LEN, ownAddress);
       }
       break;
 
