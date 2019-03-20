@@ -444,7 +444,7 @@ static void SimpleBLEPeripheral_init(void)
     uint8_t charValue2 = 2;
     uint8_t charValue3 = 3;
     uint8_t charValue4 = 4;
-    uint8_t charValue5[SIMPLEPROFILE_CHAR5_LEN] = { 1, 2, 3, 4, 5 };
+    uint8_t charValue5[2] = { 1, 2};
 
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR1, sizeof(uint8_t),
                                &charValue1);
@@ -454,7 +454,7 @@ static void SimpleBLEPeripheral_init(void)
                                &charValue3);
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(uint8_t),
                                &charValue4);
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR5, SIMPLEPROFILE_CHAR5_LEN,
+    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR5, sizeof(uint16_t),
                                charValue5);
   }
 
@@ -973,11 +973,31 @@ static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID)
     case SIMPLEPROFILE_CHAR1:
       SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR1, &newValue);
       break;
+	  
+    case SIMPLEPROFILE_CHAR2:
+      SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR2, &newValue);
+      break;	  
 
     case SIMPLEPROFILE_CHAR3:
       SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR3, &newValue);
       break;
 
+    case SIMPLEPROFILE_CHAR4:
+      SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR4, &newValue);
+      break;	  
+
+    case SIMPLEPROFILE_CHAR5:
+      SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR5, &newValue);
+      break;	  
+
+    case SIMPLEPROFILE_CHAR6:
+      SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR6, &newValue);
+      break;	  
+
+    case SIMPLEPROFILE_CHAR7:
+      SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR7, &newValue);
+      break;	  
+	  
     default:
       // should not reach here!
       break;
