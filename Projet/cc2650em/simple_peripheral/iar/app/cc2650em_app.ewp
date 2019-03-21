@@ -3172,6 +3172,9 @@
     <group>
         <name>Application</name>
         <file>
+            <name>$PROJ_DIR$\..\..\..\..\..\src\examples\simple_peripheral\cc26xx\app\ibeaconcfg.h</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\..\..\..\..\src\examples\simple_peripheral\cc26xx\app\simple_peripheral.c</name>
         </file>
         <file>
@@ -3223,6 +3226,15 @@
             </file>
             <file>
                 <name>$TI_RTOS_DRIVERS_BASE$\ti\drivers\rf\RFCC26XX_singleMode.c</name>
+            </file>
+        </group>
+        <group>
+            <name>SNV</name>
+            <file>
+                <name>$PROJ_DIR$\..\..\..\..\..\src\examples\simple_peripheral\cc26xx\app\snv.c</name>
+            </file>
+            <file>
+                <name>$PROJ_DIR$\..\..\..\..\..\src\examples\simple_peripheral\cc26xx\app\snv.h</name>
             </file>
         </group>
         <group>

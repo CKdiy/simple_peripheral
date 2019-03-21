@@ -15,7 +15,7 @@
 /*********************************************************************
  * CONSTANTS
  */
-
+#define MANUFACTURE_DATE_LEN 11
 /*********************************************************************
  * VARIABLES
  */
@@ -36,6 +36,12 @@ typedef struct
     uint8_t mDate[11];       
     uint8_t initFlag;          
 }ibeaconinf_config_t;
+
+typedef struct 
+{
+    uint32_t   crc32;
+	ibeaconinf_config_t ibeaconinf_config;
+}snvinf_t;
 
 /*********************************************************************
  * VARIABLES
