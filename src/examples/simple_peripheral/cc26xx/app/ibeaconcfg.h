@@ -16,6 +16,7 @@
  * CONSTANTS
  */
 #define MANUFACTURE_DATE_LEN 11
+#define DEFAULT_UUID_LEN     16
 /*********************************************************************
  * VARIABLES
  */

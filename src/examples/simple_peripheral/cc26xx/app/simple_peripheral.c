@@ -88,7 +88,10 @@
 #include "board.h"
 
 #include "simple_peripheral.h"
-
+   
+#include "snv.h"
+#include "ibeaconcfg.h"
+   
 #if defined( USE_FPGA ) || defined( DEBUG_SW_TRACE )
 #include <driverlib/ioc.h>
 #endif // USE_FPGA | DEBUG_SW_TRACE
@@ -202,7 +205,7 @@ static uint16_t events;
 // Task configuration
 Task_Struct sbpTask;
 Char sbpTaskStack[SBP_TASK_STACK_SIZE];
-
+ibeaconinf_config_t ibeaconInf_Config;
 // Profile state and parameters
 //static gaprole_States_t gapProfileState = GAPROLE_INIT;
 
@@ -283,6 +286,7 @@ void SimpleBLEPeripheral_processOadWriteCB(uint8_t event, uint16_t connHandle,
 #endif //FEATURE_OAD
 
 static void uart0BoardReciveCallback(UART_Handle handle, void *buf, size_t count);
+void SimpleBLEPeripheral_BleParameterGet(void);
 /*********************************************************************
  * EXTERN FUNCTIONS
  */
@@ -370,6 +374,8 @@ static void SimpleBLEPeripheral_init(void)
   // Setup the GAP
   GAP_SetParamValue(TGAP_CONN_PAUSE_PERIPHERAL, DEFAULT_CONN_PAUSE_PERIPHERAL);
   
+  Nvram_Init();
+  SimpleBLEPeripheral_BleParameterGet();
   Open_uart0(uart0BoardReciveCallback);
   
   // Setup the GAP Peripheral Role Profile
@@ -387,7 +393,14 @@ static void SimpleBLEPeripheral_init(void)
     uint16_t desiredMaxInterval = DEFAULT_DESIRED_MAX_CONN_INTERVAL;
     uint16_t desiredSlaveLatency = DEFAULT_DESIRED_SLAVE_LATENCY;
     uint16_t desiredConnTimeout = DEFAULT_DESIRED_CONN_TIMEOUT;
-
+	
+	if(ibeaconInf_Config.initFlag != 0xFF)
+	{
+		memcpy(&scanRspData[19], &ibeaconInf_Config.majorValue[0], sizeof(uint32_t));
+		memcpy(&advertData[9], &ibeaconInf_Config.uuidValue, DEFAULT_UUID_LEN);
+		memcpy(&advertData[9 + DEFAULT_UUID_LEN], &ibeaconInf_Config.majorValue, sizeof(uint32_t));
+	}
+	
     // Set the GAP Role Parameters
     GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8_t),
                          &initialAdvertEnable);
@@ -416,11 +429,65 @@ static void SimpleBLEPeripheral_init(void)
   // Set advertising interval
   {
     uint16_t advInt = DEFAULT_ADVERTISING_INTERVAL;
-
+    uint8_t txpower = HCI_EXT_TX_POWER_0_DBM;
+	  
+    if(ibeaconInf_Config.initFlag != 0xFF)
+	{
+	  switch(ibeaconInf_Config.txInterval)
+	  {		
+		case 1: advInt = 1400;                            //875ms
+		    break;			
+		case 2: advInt = DEFAULT_ADVERTISING_INTERVAL*5;  //500ms
+		    break;			
+		case 3: advInt = DEFAULT_ADVERTISING_INTERVAL*3;  //300ms
+		    break;			
+		case 4: advInt = 400;                             //250ms
+		    break;			
+		case 5: advInt = DEFAULT_ADVERTISING_INTERVAL*2;  //200ms
+		    break;			
+		case 10: advInt = DEFAULT_ADVERTISING_INTERVAL;   //100
+		    break;			
+		case 20: advInt = DEFAULT_ADVERTISING_INTERVAL/2; //50ms
+	        break;			
+		case 30: advInt = 48;                             //30ms test
+	        break;			
+	    default: advInt = DEFAULT_ADVERTISING_INTERVAL * 3;
+		    break;       
+	  }
+	  
+	  switch(ibeaconInf_Config.txPower)
+	  {
+		case 0: txpower = HCI_EXT_TX_POWER_0_DBM;         //0dbm                       
+		    break;	  
+		case 1: txpower = HCI_EXT_TX_POWER_1_DBM;         //1dbm                     
+		    break;
+		case 2: txpower = HCI_EXT_TX_POWER_2_DBM;         //2dbm                      
+		    break;
+		case 3: txpower = HCI_EXT_TX_POWER_3_DBM;         //3dbm                   
+		    break;
+		case 4: txpower = HCI_EXT_TX_POWER_4_DBM;         //4dbm                  
+		    break;			
+		case 5: txpower = HCI_EXT_TX_POWER_5_DBM;         //5dbm                 
+		    break;			
+		case 6: txpower = HCI_EXT_TX_POWER_MINUS_3_DBM;   //-3dbm                        
+		    break;			
+		case 7: txpower = HCI_EXT_TX_POWER_MINUS_6_DBM;   //-6dbm 
+		    break;	
+		case 8: txpower = HCI_EXT_TX_POWER_MINUS_12_DBM;  //-12dbm  
+		    break;	
+		case 9: txpower = HCI_EXT_TX_POWER_MINUS_21_DBM;  //-21dbm  
+		    break;				
+	    default: txpower = HCI_EXT_TX_POWER_0_DBM; 
+		    break; 			
+	  } 
+	}
+	
     GAP_SetParamValue(TGAP_LIM_DISC_ADV_INT_MIN, advInt);
     GAP_SetParamValue(TGAP_LIM_DISC_ADV_INT_MAX, advInt);
     GAP_SetParamValue(TGAP_GEN_DISC_ADV_INT_MIN, advInt);
     GAP_SetParamValue(TGAP_GEN_DISC_ADV_INT_MAX, advInt);
+	
+    HCI_EXT_SetTxPowerCmd(txpower);
   }
 
   // Initialize GATT attributes
@@ -445,22 +512,23 @@ static void SimpleBLEPeripheral_init(void)
 #ifndef FEATURE_OAD_ONCHIP
   // Setup the SimpleProfile Characteristic Values
   {
-    uint8_t charValue1 = 1;
-    uint8_t charValue2 = 2;
-    uint8_t charValue3 = 3;
-    uint8_t charValue4 = 4;
-    uint8_t charValue5[2] = { 1, 2};
+    uint8_t charValue1[] = {0x34,0x12}; 
+    uint8_t charValue4[] = {0x01,0x4A};  //default 3.3V
 
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR1, sizeof(uint8_t),
-                               &charValue1);
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR2, sizeof(uint8_t),
-                               &charValue2);
+    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR1, sizeof(uint16_t),
+                               charValue1);
+    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR2, DEFAULT_UUID_LEN,
+                               &ibeaconInf_Config.uuidValue[0]);
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR3, sizeof(uint8_t),
-                               &charValue3);
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(uint8_t),
-                               &charValue4);
+                               &ibeaconInf_Config.txPower);
+    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(uint16_t),
+                               charValue4);
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR5, sizeof(uint16_t),
-                               charValue5);
+                               &ibeaconInf_Config.majorValue[0]);	
+    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR6, sizeof(uint16_t),
+                               &ibeaconInf_Config.minorValue[0]);
+    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR7, sizeof(uint8_t),
+                               &ibeaconInf_Config.txInterval);	
   }
 
   // Register callback with SimpleGATTprofile
@@ -1143,6 +1211,35 @@ void uart0BoardReciveCallback(UART_Handle handle, void *buf, size_t count)
 	}
 	
     UART_read(handle, buf, UART0_RECEICE_BUFF_SIZE);
+}
+
+/*********************************************************************
+ * @fn      SimpleBLEPeripheral_BleParameterGet
+ *
+ * @brief    Get Ble Parameter.
+ *
+ * @param   none
+ *
+ * @return  none
+ */
+void SimpleBLEPeripheral_BleParameterGet(void)
+{
+  	uint32_t crc;
+	
+	snvinf_t *ptr = (snvinf_t *)rxbuff; //reuse  
+    
+	if( Ble_ReadNv_Inf( BLE_NVID_DEVINF_START, (uint8_t *)ptr) == 0 )
+	{
+		crc = crc32(0, &ptr->ibeaconinf_config.txPower, sizeof(ibeaconinf_config_t));
+		if( crc == ptr->crc32)
+		  memcpy(&ibeaconInf_Config.txPower, &ptr->ibeaconinf_config.txPower, sizeof(ibeaconinf_config_t));
+		else
+		  ibeaconInf_Config.initFlag = 0xFF;
+	}
+	else
+		ibeaconInf_Config.initFlag = 0xFF;
+	
+	memset( (void *)rxbuff, 0, sizeof(rxbuff));
 }
 /*********************************************************************
 *********************************************************************/
