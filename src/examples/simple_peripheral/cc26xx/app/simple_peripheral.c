@@ -91,7 +91,8 @@
    
 #include "snv.h"
 #include "ibeaconcfg.h"
-   
+#include "auxadc.h"
+
 #if defined( USE_FPGA ) || defined( DEBUG_SW_TRACE )
 #include <driverlib/ioc.h>
 #endif // USE_FPGA | DEBUG_SW_TRACE
@@ -364,6 +365,7 @@ void SimpleBLEPeripheral_createTask(void)
  */
 static void SimpleBLEPeripheral_init(void)
 {
+  uint16_t adcvalue = 0;  
   // ******************************************************************
   // N0 STACK API CALLS CAN OCCUR BEFORE THIS CALL TO ICall_registerApp
   // ******************************************************************
@@ -383,6 +385,9 @@ static void SimpleBLEPeripheral_init(void)
   
   Nvram_Init();
   SimpleBLEPeripheral_BleParameterGet();
+  adcvalue = adc_OneShot_Read();
+  memcpy( &scanRspData[23], &adcvalue, sizeof(uint16_t) );
+  adcvalue = ntohs(adcvalue);
   
   if( ibeaconInf_Config.atFlag != (0xFF - 1) )
   	Open_uart0( uart0BoardReciveCallback );
@@ -522,9 +527,8 @@ static void SimpleBLEPeripheral_init(void)
   // Setup the SimpleProfile Characteristic Values
   {
     uint8_t charValue1[] = {0x34,0x12}; 
-    uint8_t charValue4[] = {0x01,0x4A};  //default 3.3V
     uint8_t hw[14] ={'H','W','V','E','R','S','I','O','N','_','0','0','0','1'}; 
-
+    
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR1, sizeof(uint16_t),
                                charValue1);
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR2, DEFAULT_UUID_LEN,
@@ -532,7 +536,7 @@ static void SimpleBLEPeripheral_init(void)
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR3, sizeof(uint8_t),
                                &ibeaconInf_Config.txPower);
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(uint16_t),
-                               charValue4);
+                               &adcvalue);
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR5, sizeof(uint16_t),
                                &ibeaconInf_Config.majorValue[0]);	
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR6, sizeof(uint16_t),

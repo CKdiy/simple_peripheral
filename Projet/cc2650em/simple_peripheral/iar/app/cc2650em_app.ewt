@@ -3499,6 +3499,15 @@
     <group>
         <name>Drivers</name>
         <group>
+            <name>AUXADC</name>
+            <file>
+                <name>$PROJ_DIR$\..\..\..\..\..\src\examples\simple_peripheral\cc26xx\app\auxadc.c</name>
+            </file>
+            <file>
+                <name>$PROJ_DIR$\..\..\..\..\..\src\examples\simple_peripheral\cc26xx\app\auxadc.h</name>
+            </file>
+        </group>
+        <group>
             <name>ECC</name>
             <file>
                 <name>$PROJ_DIR$\..\..\..\..\..\src\common\cc26xx\ecc\ECCROMCC26XX.c</name>
