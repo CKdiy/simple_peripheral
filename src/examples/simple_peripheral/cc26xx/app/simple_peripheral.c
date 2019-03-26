@@ -140,7 +140,7 @@
 #define DEFAULT_CONN_PAUSE_PERIPHERAL         6
 
 // How often to perform periodic event (in msec)
-#define SBP_PERIODIC_EVT_PERIOD               500
+#define SBP_PERIODIC_EVT_PERIOD               60000 //60s
 
 #ifdef FEATURE_OAD
 // The size of an OAD packet.
@@ -275,7 +275,6 @@ static uint8_t SimpleBLEPeripheral_processGATTMsg(gattMsgEvent_t *pMsg);
 static void SimpleBLEPeripheral_processAppMsg(sbpEvt_t *pMsg);
 static void SimpleBLEPeripheral_processStateChangeEvt(gaprole_States_t newState);
 static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID);
-static void SimpleBLEPeripheral_performPeriodicTask(void);
 static void SimpleBLEPeripheral_clockHandler(UArg arg);
 
 static void SimpleBLEPeripheral_sendAttRsp(void);
@@ -639,11 +638,7 @@ static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
     if (events & SBP_PERIODIC_EVT)
     {
       events &= ~SBP_PERIODIC_EVT;
-
-      Util_startClock(&periodicClock);
-
-      // Perform periodic application task
-      SimpleBLEPeripheral_performPeriodicTask();
+      GAPRole_TerminateConnection();
     }
 	
 	if( ibeaconInf_Config.atFlag != (0xFF - 1) )
@@ -1078,38 +1073,6 @@ static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID)
   }
 #endif //!FEATURE_OAD_ONCHIP
 }
-
-/*********************************************************************
- * @fn      SimpleBLEPeripheral_performPeriodicTask
- *
- * @brief   Perform a periodic application task. This function gets called
- *          every five seconds (SBP_PERIODIC_EVT_PERIOD). In this example,
- *          the value of the third characteristic in the SimpleGATTProfile
- *          service is retrieved from the profile, and then copied into the
- *          value of the the fourth characteristic.
- *
- * @param   None.
- *
- * @return  None.
- */
-static void SimpleBLEPeripheral_performPeriodicTask(void)
-{
-#ifndef FEATURE_OAD_ONCHIP
-  uint8_t valueToCopy;
-
-  // Call to retrieve the value of the third characteristic in the profile
-  if (SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR3, &valueToCopy) == SUCCESS)
-  {
-    // Call to set that value of the fourth characteristic in the profile.
-    // Note that if notifications of the fourth characteristic have been
-    // enabled by a GATT client device, then a notification will be sent
-    // every time this function is called.
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(uint8_t),
-                               &valueToCopy);
-  }
-#endif //!FEATURE_OAD_ONCHIP
-}
-
 
 #ifdef FEATURE_OAD
 /*********************************************************************
