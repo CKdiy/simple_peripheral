@@ -17,7 +17,7 @@ static const block_info_t fb[] =
 
 #define FB_SIZE         (sizeof(fb)/sizeof(block_info_t))
 
-uint8_t nvBuf[45] = {0};
+uint8_t nvBuf[50] = {0};
 
 static int Nvram_Block_Init(uint8_t nvid, uint8_t len);
 static int Nvram_Block_Check(uint8_t nvid, uint8_t len);
@@ -114,8 +114,14 @@ int Ble_ReadNv_Inf(uint8_t nvid, uint8_t *readbuf)
 	for(i=0; i<FB_SIZE; i++)
 	{
 		if(fb[i].NVid == nvid)
+		{
 			len =  fb[i].size; 
+			break;
+		}
 	}
+	
+	if(i == FB_SIZE)
+		len = 47;  
 	
 	status = osal_snv_read(nvid, len, (void *)readbuf);	
 	if(status != SUCCESS)
@@ -137,8 +143,14 @@ int Ble_WriteNv_Inf(uint8_t nvid, uint8_t *writebuf)
 	for(i=0; i<FB_SIZE; i++)
 	{
 		if(fb[i].NVid == nvid)
+		{
 			len =  fb[i].size; 
+			break;
+		}
 	}
+	
+	if(i == FB_SIZE)
+		len = 47;  
 	
 	memset(nvBuf, 0, sizeof(nvBuf));
 	

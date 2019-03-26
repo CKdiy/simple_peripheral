@@ -47,7 +47,7 @@ bool Open_uart0(UART_Callback appuartCB)
 	
 	/* Create a UART with data processing off. */
 	UART_Params_init(&uartParams);
-	uartParams.baudRate 			= 115200;
+	uartParams.baudRate 			= 9600;
 	uartParams.writeDataMode	 	= UART_DATA_BINARY;
 	uartParams.readDataMode 		= UART_DATA_BINARY;
 	uartParams.dataLength     		= UART_LEN_8;

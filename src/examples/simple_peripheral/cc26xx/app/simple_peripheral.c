@@ -161,6 +161,9 @@
 #define SBP_PERIODIC_EVT                      0x0004
 #define SBP_CONN_EVT_END_EVT                  0x0008
 
+#define DEFAULT_UART_AT_TEST_LEN              4
+#define DEFAULT_UART_AT_CMD_LEN               49
+#define DEFAULT_UART_AT_RSP_LEN               6
 /*********************************************************************
  * TYPEDEFS
  */
@@ -247,6 +250,10 @@ static uint8_t advertData[] =
   0xB5 //(-75dB)
 };
 
+const uint8_t D_FRT[10] ={'2','0','1','9','-','0','4','-','0','1'};                //固件发布日期 必须与设备信息一致 
+const uint8_t D_FR[14]={'F','M','V','E','R','S','I','O','N','_','0','0','0','1'}; //固件版本      必须与设备信息一致 
+const uint8_t D_CKey[16]={0xDE,0x48,0x2B,0x1C,0x22,0x1C,0x6C,0x30,0x3C,0xF0,0x50,0xEB,0x00,0x20,0xB0,0xBD}; //与生产软件配合使用
+
 // GAP GATT Attributes
 static uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "Beelinker";
 
@@ -255,7 +262,7 @@ static gattMsgEvent_t *pAttRsp = NULL;
 static uint8_t rspTxRetry = 0;
 
 extern volatile uint8_t rx_buff_header,rx_buff_tailor;
-static volatile uint8_t rxbuff[RX_BUFF_SIZE];
+static uint8_t rxbuff[RX_BUFF_SIZE];
 /*********************************************************************
  * LOCAL FUNCTIONS
  */
@@ -284,9 +291,10 @@ static void SimpleBLEPeripheral_enqueueMsg(uint8_t event, uint8_t state);
 void SimpleBLEPeripheral_processOadWriteCB(uint8_t event, uint16_t connHandle,
                                            uint8_t *pData);
 #endif //FEATURE_OAD
-
+static void SimpleBLEPeripheral_uart0Task(void);
 static void uart0BoardReciveCallback(UART_Handle handle, void *buf, size_t count);
 void SimpleBLEPeripheral_BleParameterGet(void);
+uint8_t str_Compara( uint8_t *ptr1, uint8_t *ptr2, uint8_t len);
 /*********************************************************************
  * EXTERN FUNCTIONS
  */
@@ -376,7 +384,9 @@ static void SimpleBLEPeripheral_init(void)
   
   Nvram_Init();
   SimpleBLEPeripheral_BleParameterGet();
-  Open_uart0(uart0BoardReciveCallback);
+  
+  if( ibeaconInf_Config.atFlag != (0xFF - 1) )
+  	Open_uart0( uart0BoardReciveCallback );
   
   // Setup the GAP Peripheral Role Profile
   {
@@ -514,6 +524,7 @@ static void SimpleBLEPeripheral_init(void)
   {
     uint8_t charValue1[] = {0x34,0x12}; 
     uint8_t charValue4[] = {0x01,0x4A};  //default 3.3V
+    uint8_t hw[14] ={'H','W','V','E','R','S','I','O','N','_','0','0','0','1'}; 
 
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR1, sizeof(uint16_t),
                                charValue1);
@@ -529,6 +540,9 @@ static void SimpleBLEPeripheral_init(void)
                                &ibeaconInf_Config.minorValue[0]);
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR7, sizeof(uint8_t),
                                &ibeaconInf_Config.txInterval);	
+	
+    memcpy(&hw[10], &ibeaconInf_Config.hwvr[0], sizeof(uint32_t));
+    DevInfo_SetParameter(DEVINFO_HARDWARE_REV, sizeof(hw), hw);
   }
 
   // Register callback with SimpleGATTprofile
@@ -631,6 +645,9 @@ static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
       // Perform periodic application task
       SimpleBLEPeripheral_performPeriodicTask();
     }
+	
+	if( ibeaconInf_Config.atFlag != (0xFF - 1) )
+		SimpleBLEPeripheral_uart0Task();
 
 #ifdef FEATURE_OAD
     while (!Queue_empty(hOadQ))
@@ -1178,6 +1195,140 @@ static void SimpleBLEPeripheral_enqueueMsg(uint8_t event, uint8_t state)
 }
 
 /*********************************************************************
+ * @fn      SimpleBLEPeripheral_uart0Task
+ *
+ * @brief   Uart0 data analysis.
+ *
+ * @param   ...
+ *
+ * @return  none
+ */
+static void SimpleBLEPeripheral_uart0Task(void)
+{
+	uint8_t heard;
+	uint8_t length;
+	uint8_t restart;
+	uint8_t res;
+	uint8_t datebuf[DEFAULT_UART_AT_CMD_LEN];
+	uint8_t mac[6];
+	uint8_t date[10];
+	
+	restart = FALSE;
+	heard = rx_buff_header;
+	if( rx_buff_tailor < heard )
+	{
+	    length = heard - rx_buff_tailor;
+		
+		if( length <= DEFAULT_UART_AT_CMD_LEN)
+			memcpy( datebuf, (void *)&rxbuff[rx_buff_tailor], length );
+		else
+		{
+			rx_buff_tailor = heard;
+			return;		
+		}
+	}
+	else if( rx_buff_tailor > heard)
+	{
+	    length = RX_BUFF_SIZE - rx_buff_tailor + heard;
+		
+		if(length <= DEFAULT_UART_AT_CMD_LEN)
+		{
+		    res =  RX_BUFF_SIZE - rx_buff_tailor;
+			memcpy( datebuf, (void *)&rxbuff[rx_buff_tailor], res );
+			memcpy( &datebuf[RX_BUFF_SIZE - rx_buff_tailor], (void *)rxbuff,  heard );
+		}
+		else
+		{
+			rx_buff_tailor = heard;
+			return;
+		}
+	}
+	else
+	  return;	
+	
+	if( DEFAULT_UART_AT_TEST_LEN == length )
+	{
+		if( str_Compara( datebuf, "AT\r\n", 4 ) )
+		{
+			Uart0_Write("OK\r\n", 4);	
+		}	
+	}
+	else if( DEFAULT_UART_AT_CMD_LEN == length )
+	{
+		if( str_Compara( datebuf, "AT+1=", 5) )
+		{
+			//uuid
+			memcpy( &ibeaconInf_Config.uuidValue[0], &datebuf[5], DEFAULT_UUID_LEN );
+			//major & minor
+			memcpy( &ibeaconInf_Config.majorValue[0], &datebuf[21], sizeof(uint32_t) );
+			//hwvr
+			memcpy( &ibeaconInf_Config.hwvr[0], &datebuf[35], sizeof(uint32_t) );
+			//txPower
+			memcpy( &ibeaconInf_Config.txPower, &datebuf[39], sizeof(uint8_t) );
+			switch( ibeaconInf_Config.txPower )
+			{
+				case 1: ibeaconInf_Config.Rxp = 0xAB; break;
+				case 3: ibeaconInf_Config.Rxp = 0xB5; break;
+				case 5: ibeaconInf_Config.Rxp = 0xBD; break;
+				case 7: ibeaconInf_Config.Rxp = 0xC0; break;
+				default : ibeaconInf_Config.Rxp = 0xB5;
+			}
+			//txInterval
+			memcpy( &ibeaconInf_Config.txInterval, &datebuf[40], sizeof(uint8_t) );
+			
+			/***** 用于通过生产软件 ***********/
+			memcpy(date, &datebuf[25], sizeof(date));
+			memcpy(mac, &datebuf[41], sizeof(mac));
+			memset(datebuf, 0, sizeof(datebuf));
+			memcpy(datebuf, mac, 6);
+			datebuf[6] = ibeaconInf_Config.txPower;
+			datebuf[7] = ibeaconInf_Config.txInterval;
+			memcpy(&datebuf[8], &ibeaconInf_Config.majorValue[0], 4);
+			memcpy(&datebuf[12], &ibeaconInf_Config.uuidValue[0], 16);
+			memcpy(&datebuf[28], date, 10);
+			datebuf[38] = ibeaconInf_Config.Rxp;
+			memcpy(&datebuf[39], &ibeaconInf_Config.hwvr[0], 4); 
+			
+			Uart0_Write("OK+1\r\n", 6);
+			
+			Ble_WriteNv_Inf( BLE_NVID_CUST_START + 1, datebuf);		
+		}
+	}
+	else if( DEFAULT_UART_AT_RSP_LEN == length )
+	{
+		if( str_Compara( datebuf, "AT+?\r\n", 6) )
+		{
+		    memset(datebuf, 0, sizeof(datebuf));
+			Ble_ReadNv_Inf(BLE_NVID_CUST_START + 1, datebuf);
+			
+			Uart0_Write( "OK+", 3 );	
+			Uart0_Write( &datebuf[4], 43);
+			Uart0_Write( D_FRT, 10);
+			Uart0_Write( &D_FR[10], 4);
+			Uart0_Write( D_CKey, 16);
+			
+			ibeaconInf_Config.atFlag = 0xFF -1;	
+			
+			Ble_WriteNv_Inf( BLE_NVID_CUST_START, &ibeaconInf_Config.txPower);
+			
+			restart = TRUE;
+		}
+	}
+	else
+	{
+	  rx_buff_tailor = heard;
+	  return;
+	}
+	
+	rx_buff_tailor = heard;
+	
+	if( TRUE == restart )
+	{
+		HCI_EXT_ResetSystemCmd(HCI_EXT_RESET_SYSTEM_HARD);		
+	}
+}
+
+/*********************************************************************
  * @fn      uart0BoardReciveCallback
  *
  * @brief   Uart0 .
@@ -1211,6 +1362,8 @@ void uart0BoardReciveCallback(UART_Handle handle, void *buf, size_t count)
 	}
 	
     UART_read(handle, buf, UART0_RECEICE_BUFF_SIZE);
+	
+    Semaphore_post(sem);
 }
 
 /*********************************************************************
@@ -1240,6 +1393,28 @@ void SimpleBLEPeripheral_BleParameterGet(void)
 		ibeaconInf_Config.initFlag = 0xFF;
 	
 	memset( (void *)rxbuff, 0, sizeof(rxbuff));
+}
+
+/*********************************************************************
+ * @fn      str_Compara
+ *
+ * @brief   Compare the array.
+ *
+ * @param   ..
+ *
+ * @return  0 Or 1
+ */
+uint8_t str_Compara( uint8_t *ptr1, uint8_t *ptr2, uint8_t len) 
+{
+	uint8_t i;
+	
+	for( i=0; i<len; i++ )
+	{
+		if( ptr1[i] != ptr2[i] )
+			return 0;  	
+	}
+	
+	return 1;  
 }
 /*********************************************************************
 *********************************************************************/
