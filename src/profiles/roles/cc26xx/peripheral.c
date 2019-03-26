@@ -77,7 +77,8 @@
 
 #include "osal_snv.h"
 #include "icall_apimsg.h"
-
+#include "snv.h"
+#include "ibeaconcfg.h"   
 /*********************************************************************
  * MACROS
  */
@@ -150,7 +151,8 @@ uint8 linkDBNumConns;
 /*********************************************************************
  * EXTERNAL VARIABLES
  */
-
+extern uint8 writerAttr_Flg;
+extern ibeaconinf_config_t ibeaconInf_Config;
 /*********************************************************************
  * EXTERNAL FUNCTIONS
  */
@@ -1314,6 +1316,12 @@ static void gapRole_processGAPMsg(gapEventHdr_t *pMsg)
           // Start advertising, if enabled.
           gapRole_setEvent(START_ADVERTISING_EVT);
         }
+		
+		if(writerAttr_Flg == TRUE)
+		{
+			Ble_WriteNv_Inf( BLE_NVID_CUST_START, &ibeaconInf_Config.txPower);	
+			HCI_EXT_ResetSystemCmd(HCI_EXT_RESET_SYSTEM_HARD);	
+		}
       }
       break;
 

@@ -60,7 +60,7 @@
 #include "gapbondmgr.h"
 
 #include "simple_gatt_profile.h"
-
+#include "ibeaconcfg.h"
 /*********************************************************************
  * MACROS
  */
@@ -129,7 +129,7 @@ CONST uint8 simpleProfilechar7UUID[ATT_BT_UUID_SIZE] =
 /*********************************************************************
  * EXTERNAL VARIABLES
  */
-
+extern ibeaconinf_config_t ibeaconInf_Config;
 /*********************************************************************
  * EXTERNAL FUNCTIONS
  */
@@ -143,6 +143,7 @@ static simpleProfileCBs_t *simpleProfile_AppCBs = NULL;
 /*********************************************************************
  * Profile Attributes - variables
  */
+uint8 writerAttr_Flg = FALSE;
 
 // Simple Profile Service attribute
 static CONST gattAttrType_t simpleProfileService = { ATT_BT_UUID_SIZE, simpleProfileServUUID };
@@ -693,7 +694,7 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 		  if( len == sizeof(simpleProfileChar1))  
 		  {
 			VOID memcpy( (uint8 *)pAttr->pValue,  pValue, len );
-			notifyApp = SIMPLEPROFILE_CHAR1;
+			notifyApp = SIMPLEPROFILE_CHAR1;		
 		  }
 		  else
 		  {
@@ -705,7 +706,9 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 		  if( len == sizeof(simpleProfileChar2))  
 		  {
 			VOID memcpy( (uint8 *)pAttr->pValue,  pValue, len );
+			VOID memcpy( &ibeaconInf_Config.uuidValue[0], pValue, len );
 			notifyApp = SIMPLEPROFILE_CHAR2;
+			writerAttr_Flg = TRUE;
 		  }
 		  else
 		  {
@@ -717,7 +720,9 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 		  if( len == sizeof(simpleProfileChar3))  
 		  {
 			VOID memcpy( (uint8 *)pAttr->pValue,  pValue, len );
+			VOID memcpy( &ibeaconInf_Config.txPower, pValue, len );
 			notifyApp = SIMPLEPROFILE_CHAR3;
+			writerAttr_Flg = TRUE;
 		  }
 		  else
 		  {
@@ -741,7 +746,9 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 		  if( len == sizeof(simpleProfileChar5))  
 		  {
 			VOID memcpy( (uint8 *)pAttr->pValue,  pValue, len );
+			VOID memcpy( &ibeaconInf_Config.majorValue[0], pValue, len );
 			notifyApp = SIMPLEPROFILE_CHAR5;
+			writerAttr_Flg = TRUE;
 		  }
 		  else
 		  {
@@ -753,7 +760,9 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 		  if( len == sizeof(simpleProfileChar6))  
 		  {
 			VOID memcpy( (uint8 *)pAttr->pValue,  pValue, len );
+			VOID memcpy( &ibeaconInf_Config.minorValue[0], pValue, len );
 			notifyApp = SIMPLEPROFILE_CHAR6;
+			writerAttr_Flg = TRUE;
 		  }
 		  else
 		  {
@@ -765,7 +774,9 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 		  if( len == sizeof(simpleProfileChar7))  
 		  {
 			VOID memcpy( (uint8 *)pAttr->pValue,  pValue, len );
+			VOID memcpy( &ibeaconInf_Config.txInterval, pValue, len );
 			notifyApp = SIMPLEPROFILE_CHAR7;
+			writerAttr_Flg = TRUE;
 		  }
 		  else
 		  {

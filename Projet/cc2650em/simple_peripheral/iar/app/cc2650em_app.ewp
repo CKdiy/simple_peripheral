@@ -373,7 +373,7 @@
                     <state>$SRC_COMMON$/services/src/sdata</state>
                     <state>$CC26XXWARE$</state>
                     <state>$TI_RTOS_DRIVERS_BASE$</state>
-                    <state>$TOOLKIT_DIR$\..\..\ti\simplelink\ble_sdk_2_02_02_25\src\common\cc26xx\rcosc</state>
+                    <state>$PROJ_DIR$\..\..\..\..\..\src\examples\simple_peripheral\cc26xx\app</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
