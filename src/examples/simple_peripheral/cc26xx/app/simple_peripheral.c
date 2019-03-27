@@ -66,6 +66,9 @@
 #include "simple_gatt_profile.h"
 #include "hal_uart.h"
 
+#include <ti/drivers/Power.h>
+#include <ti/drivers/power/PowerCC26XX.h>
+
 #if defined(FEATURE_OAD) || defined(IMAGE_INVALIDATE)
 #include "oad_target.h"
 #include "oad.h"
@@ -178,8 +181,21 @@ typedef struct
 /*********************************************************************
  * GLOBAL VARIABLES
  */
+PIN_Config adcPinTable[] = {
+    Board_DK_ADC   | PIN_INPUT_EN  | PIN_PULLUP, 	
+	PIN_TERMINATE    
+};
 
+PIN_Config uart0PinTable[] = {
+    Board_UART_RX   | PIN_INPUT_EN  | PIN_PULLUP, 	
+	Board_UART_TX   | PIN_INPUT_EN  | PIN_PULLUP, 
+	PIN_TERMINATE    
+};
 
+static PIN_State adcPinState;
+static PIN_Handle adcPin;
+static PIN_State uart0PinState;
+static PIN_Handle uart0Pin;
 /*********************************************************************
  * LOCAL VARIABLES
  */
@@ -294,6 +310,7 @@ void SimpleBLEPeripheral_processOadWriteCB(uint8_t event, uint16_t connHandle,
 static void SimpleBLEPeripheral_uart0Task(void);
 static void uart0BoardReciveCallback(UART_Handle handle, void *buf, size_t count);
 void SimpleBLEPeripheral_BleParameterGet(void);
+void SimpleBLEPeripheral_LowPowerMgr(void);
 uint8_t str_Compara( uint8_t *ptr1, uint8_t *ptr2, uint8_t len);
 /*********************************************************************
  * EXTERN FUNCTIONS
@@ -391,6 +408,11 @@ static void SimpleBLEPeripheral_init(void)
   
   if( ibeaconInf_Config.atFlag != (0xFF - 1) )
   	Open_uart0( uart0BoardReciveCallback );
+  else
+  {
+  	Power_releaseConstraint(PowerCC26XX_SB_DISALLOW);
+	Power_releaseConstraint(PowerCC26XX_IDLE_PD_DISALLOW);
+  }
   
   // Setup the GAP Peripheral Role Profile
   {
@@ -547,6 +569,9 @@ static void SimpleBLEPeripheral_init(void)
     memcpy(&hw[10], &ibeaconInf_Config.hwvr[0], sizeof(uint32_t));
     DevInfo_SetParameter(DEVINFO_HARDWARE_REV, sizeof(hw), hw);
   }
+  
+  if( ibeaconInf_Config.atFlag == (0xFF - 1) )
+  	SimpleBLEPeripheral_LowPowerMgr();
 
   // Register callback with SimpleGATTprofile
   SimpleProfile_RegisterAppCBs(&SimpleBLEPeripheral_simpleProfileCBs);
@@ -1360,6 +1385,17 @@ void SimpleBLEPeripheral_BleParameterGet(void)
 		ibeaconInf_Config.initFlag = 0xFF;
 	
 	memset( (void *)rxbuff, 0, sizeof(rxbuff));
+}
+
+void SimpleBLEPeripheral_LowPowerMgr(void)
+{
+	if(adcPin)
+	  PIN_close(adcPin); 
+    adcPin = PIN_open(&adcPinState, adcPinTable);
+	  
+	if(uart0Pin)
+		PIN_close(uart0Pin);   
+	uart0Pin = PIN_open(&uart0PinState, uart0PinTable); 
 }
 
 /*********************************************************************

@@ -78,7 +78,7 @@ extern const PIN_Config BoardGpioInitTable[];
 #define Board_LED_OFF                       0
 #define Board_DK_LED1                       PIN_UNASSIGNED
 #define Board_DK_LED2                       PIN_UNASSIGNED
-#define Board_DK_LED3                       IOID_5          /* P1.2  */
+#define Board_DK_ADC                        IOID_5          /* P1.2  */
 #define Board_DK_LED4                       IOID_6          /* P1.4  */
 /* Button Board */
 #define Board_KEY_SELECT                    IOID_7          /* P1.14 */
@@ -102,7 +102,7 @@ extern const PIN_Config BoardGpioInitTable[];
 #define Board_SPI0_CLK                      IOID_8          /* P1.16 */
 #define Board_SPI0_CSN                      PIN_UNASSIGNED
 /* PWM outputs */
-#define Board_PWMPIN0                       Board_DK_LED3
+#define Board_PWMPIN0                       Board_DK_ADC
 #define Board_PWMPIN1                       Board_DK_LED4
 #define Board_PWMPIN2                       PIN_UNASSIGNED
 #define Board_PWMPIN3                       PIN_UNASSIGNED
