@@ -224,6 +224,7 @@
                     <state>xDisplay_DISABLE_ALL</state>
                     <state>xdc_runtime_Assert_DISABLE_ALL</state>
                     <state>xdc_runtime_Log_DISABLE_ALL</state>
+                    <state>IWDG_ENABLE</state>
                 </option>
                 <option>
                     <name>CCPreprocFile</name>

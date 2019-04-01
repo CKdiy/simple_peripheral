@@ -237,6 +237,14 @@ typedef enum CC2650DK_4XS_PWM
     CC2650DK_4XS_PWMCOUNT
 } CC2650DK_4XS_PWM;
 
+/*!
+*  @def    CC2650_WatchdogName
+*  @brief  Enum of Watchdogs on the CC2650 dev board
+*/
+typedef enum CC2650_WatchdogName {
+	CC2650_WATCHDOG0 = 0,
+	CC2650_WATCHDOGCOUNT
+} CC2650_WatchdogName;
 
 #ifdef __cplusplus
 }

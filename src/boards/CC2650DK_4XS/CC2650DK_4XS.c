@@ -51,6 +51,8 @@
 #include <ti/drivers/timer/GPTimerCC26XX.h>
 #include <ti/drivers/Power.h>
 #include <ti/drivers/power/PowerCC26XX.h>
+#include <ti/drivers/Watchdog.h>
+#include <ti/drivers/watchdog/WatchdogCC26XX.h>
 
 #include <inc/hw_memmap.h>
 #include <inc/hw_ints.h>
@@ -457,3 +459,33 @@ const TRNGCC26XX_Config TRNGCC26XX_config[] = {
 /*
  *  ========================= TRNG end ====================================
  */
+
+/*
+*  ============================= WatchDog Begin===========================
+*/
+ 
+/* Watchdog objects */
+WatchdogCC26XX_Object watchdogCC26XXObjects[CC2650_WATCHDOGCOUNT];
+ 
+/* Watchdog configuration structure */
+const WatchdogCC26XX_HWAttrs watchdogCC26XXHWAttrs[CC2650_WATCHDOGCOUNT] = {
+  {
+   	.baseAddr = WDT_BASE,
+	.intNum   = INT_WDT_IRQ,
+	.reloadValue = 1000 /* Reload value in milliseconds */
+  },
+  //  WDT_BASE, INT_WDT_IRQ
+};
+ 
+const Watchdog_Config Watchdog_config[] = {
+    {
+	    .fxnTablePtr = &WatchdogCC26XX_fxnTable,
+		.object      = &watchdogCC26XXObjects[CC2650_WATCHDOG0], 
+		.hwAttrs     = &watchdogCC26XXHWAttrs[CC2650_WATCHDOG0]
+	},
+	{NULL, NULL, NULL},
+};
+const uint_least8_t Watchdog_count = CC2650_WATCHDOGCOUNT;
+/*
+*  ============================= WatchDog End============================
+*/

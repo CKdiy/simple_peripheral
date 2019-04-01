@@ -68,6 +68,8 @@
 
 #include <ti/drivers/Power.h>
 #include <ti/drivers/power/PowerCC26XX.h>
+#include <ti/drivers/Watchdog.h>
+#include <inc/hw_wdt.h>
 
 #if defined(FEATURE_OAD) || defined(IMAGE_INVALIDATE)
 #include "oad_target.h"
@@ -146,6 +148,10 @@
 // How often to perform periodic event (in msec)
 #define SBP_PERIODIC_EVT_PERIOD               60000 //60s
 
+#define SBP_PERIODIC_EVT_PERIOD_10MIN         600000 //10min
+
+#define SBP_PERIODIC_EVT_PERIOD_2s            2000 //2s
+
 #ifdef FEATURE_OAD
 // The size of an OAD packet.
 #define OAD_PACKET_SIZE                       ((OAD_BLOCK_SIZE) + 2)
@@ -164,6 +170,8 @@
 #define SBP_CHAR_CHANGE_EVT                   0x0002
 #define SBP_PERIODIC_EVT                      0x0004
 #define SBP_CONN_EVT_END_EVT                  0x0008
+#define SBP_SYSTEM_RESTAR_EVT                 0x0010
+#define SBP_CLEAR_WDT_EVT                     0x0020
 
 #define DEFAULT_UART_AT_TEST_LEN              4
 #define DEFAULT_UART_AT_CMD_LEN               49
@@ -208,6 +216,8 @@ static ICall_Semaphore sem;
 
 // Clock instances for internal periodic events.
 static Clock_Struct periodicClock;
+static Clock_Struct sysRestarClock;
+static Clock_Struct clearWdtClock;
 
 // Queue object used for app messages
 static Queue_Struct appMsg;
@@ -280,6 +290,11 @@ static uint8_t rspTxRetry = 0;
 
 extern volatile uint8_t rx_buff_header,rx_buff_tailor;
 static uint8_t rxbuff[RX_BUFF_SIZE];
+
+#ifdef IWDG_ENABLE 
+//Watchdog_Params params;
+Watchdog_Handle watchdog;
+#endif
 /*********************************************************************
  * LOCAL FUNCTIONS
  */
@@ -312,6 +327,10 @@ static void uart0BoardReciveCallback(UART_Handle handle, void *buf, size_t count
 void SimpleBLEPeripheral_BleParameterGet(void);
 void SimpleBLEPeripheral_LowPowerMgr(void);
 uint8_t str_Compara( uint8_t *ptr1, uint8_t *ptr2, uint8_t len);
+
+#ifdef IWDG_ENABLE 
+void wdtInitFxn(void);
+#endif
 /*********************************************************************
  * EXTERN FUNCTIONS
  */
@@ -396,6 +415,9 @@ static void SimpleBLEPeripheral_init(void)
   // Create one-shot clocks for internal periodic events.
   Util_constructClock(&periodicClock, SimpleBLEPeripheral_clockHandler,
                       SBP_PERIODIC_EVT_PERIOD, 0, false, SBP_PERIODIC_EVT);
+  
+  Util_constructClock(&sysRestarClock, SimpleBLEPeripheral_clockHandler,
+                      SBP_PERIODIC_EVT_PERIOD_10MIN, 0, false, SBP_SYSTEM_RESTAR_EVT);
 
   // Setup the GAP
   GAP_SetParamValue(TGAP_CONN_PAUSE_PERIPHERAL, DEFAULT_CONN_PAUSE_PERIPHERAL);
@@ -410,6 +432,13 @@ static void SimpleBLEPeripheral_init(void)
   	Open_uart0( uart0BoardReciveCallback );
   else
   {
+#ifdef IWDG_ENABLE
+    wdtInitFxn();
+	Util_constructClock(&clearWdtClock, SimpleBLEPeripheral_clockHandler,
+                         SBP_PERIODIC_EVT_PERIOD_2s, 0, false, SBP_CLEAR_WDT_EVT);	
+	
+	Util_startClock(&clearWdtClock);
+#endif
   	Power_releaseConstraint(PowerCC26XX_SB_DISALLOW);
 	Power_releaseConstraint(PowerCC26XX_IDLE_PD_DISALLOW);
   }
@@ -525,7 +554,7 @@ static void SimpleBLEPeripheral_init(void)
 	
     HCI_EXT_SetTxPowerCmd(txpower);
   }
-
+ 
   // Initialize GATT attributes
   GGS_AddService(GATT_ALL_SERVICES);           // GAP
   GATTServApp_AddService(GATT_ALL_SERVICES);   // GATT attributes
@@ -579,7 +608,9 @@ static void SimpleBLEPeripheral_init(void)
 
   // Start the Device
   VOID GAPRole_StartDevice(&SimpleBLEPeripheral_gapRoleCBs);
-
+  
+  Util_startClock(&sysRestarClock);
+  
   // Register with GAP for HCI/Host messages
   GAP_RegisterForMsgs(selfEntity);
 
@@ -663,12 +694,25 @@ static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
         }
       }
     }
-
+	
     if (events & SBP_PERIODIC_EVT)
     {
       events &= ~SBP_PERIODIC_EVT;
       GAPRole_TerminateConnection();
     }
+    else if(events & SBP_SYSTEM_RESTAR_EVT)
+    {
+        events &= ~SBP_SYSTEM_RESTAR_EVT;
+        HCI_EXT_ResetSystemCmd(HCI_EXT_RESET_SYSTEM_HARD);
+    }
+	else if( events & SBP_CLEAR_WDT_EVT )
+	{
+	    events &= ~SBP_CLEAR_WDT_EVT;
+	    Util_startClock(&clearWdtClock);
+#ifdef IWDG_ENABLE 
+	    Watchdog_clear(watchdog);
+#endif		
+	}
 	
 	if( ibeaconInf_Config.atFlag != (0xFF - 1) )
 		SimpleBLEPeripheral_uart0Task();
@@ -1064,7 +1108,7 @@ static void SimpleBLEPeripheral_charValueChangeCB(uint8_t paramID)
 static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID)
 {
 #ifndef FEATURE_OAD_ONCHIP
-  uint8_t newValue;
+  uint8_t newValue[16];
 
   switch(paramID)
   {
@@ -1397,6 +1441,34 @@ void SimpleBLEPeripheral_LowPowerMgr(void)
 		PIN_close(uart0Pin);   
 	uart0Pin = PIN_open(&uart0PinState, uart0PinTable); 
 }
+
+/****************Watch Dog Functions*********************************/
+#ifdef IWDG_ENABLE 
+void wdtCallback(UArg handle) 
+{
+    while(1);
+}
+
+void wdtInitFxn(void) 
+{
+	uint32_t  reloadValue;
+	
+	Watchdog_Params wp;
+	
+	Watchdog_init();
+	Watchdog_Params_init(&wp);
+	wp.callbackFxn    = (Watchdog_Callback)wdtCallback;
+	wp.debugStallMode = Watchdog_DEBUG_STALL_ON;
+	wp.resetMode      = Watchdog_RESET_ON;
+ 
+	watchdog = Watchdog_open(CC2650_WATCHDOG0, &wp);
+	reloadValue = Watchdog_convertMsToTicks(watchdog, 3500000);
+	
+	if( reloadValue != 0)
+	    Watchdog_setReload(watchdog, reloadValue); //  (WDT runs always at 48MHz/32)
+}
+#endif
+/********************************************************************/
 
 /*********************************************************************
  * @fn      str_Compara
