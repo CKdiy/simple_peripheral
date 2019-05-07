@@ -424,9 +424,9 @@ static void SimpleBLEPeripheral_init(void)
   
   Nvram_Init();
   SimpleBLEPeripheral_BleParameterGet();
-  adcvalue = adc_OneShot_Read();
-  memcpy( &scanRspData[23], &adcvalue, sizeof(uint16_t) );
-  adcvalue = ntohs(adcvalue);
+  adcvalue = adc_OneShot_Read() + 117;
+  scanRspData[23] = adcvalue & 0xFF;
+  scanRspData[24] = adcvalue >> 8;
   
   if( ibeaconInf_Config.atFlag != (0xFF - 1) )
   	Open_uart0( uart0BoardReciveCallback );
@@ -579,7 +579,7 @@ static void SimpleBLEPeripheral_init(void)
   {
     uint8_t charValue1[] = {0x34,0x12}; 
     uint8_t hw[14] ={'H','W','V','E','R','S','I','O','N','_','0','0','0','1'}; 
-    
+	
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR1, sizeof(uint16_t),
                                charValue1);
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR2, DEFAULT_UUID_LEN,
