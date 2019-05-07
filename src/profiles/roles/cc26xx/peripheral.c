@@ -152,7 +152,9 @@ uint8 linkDBNumConns;
  * EXTERNAL VARIABLES
  */
 extern uint8 writerAttr_Flg;
+extern uint8 configLimit_Flg;
 extern ibeaconinf_config_t ibeaconInf_Config;
+
 /*********************************************************************
  * EXTERNAL FUNCTIONS
  */
@@ -1270,6 +1272,7 @@ static void gapRole_processGAPMsg(gapEventHdr_t *pMsg)
           gapRole_state = GAPROLE_ERROR;
         }
         notify = TRUE;
+        configLimit_Flg = FALSE;
       }
       break;
 
@@ -1316,7 +1319,7 @@ static void gapRole_processGAPMsg(gapEventHdr_t *pMsg)
           // Start advertising, if enabled.
           gapRole_setEvent(START_ADVERTISING_EVT);
         }
-		
+		configLimit_Flg = FALSE;
 		if(writerAttr_Flg == TRUE)
 		{
 			Ble_WriteNv_Inf( BLE_NVID_CUST_START, &ibeaconInf_Config.txPower);	

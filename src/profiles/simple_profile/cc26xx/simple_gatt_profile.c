@@ -144,7 +144,7 @@ static simpleProfileCBs_t *simpleProfile_AppCBs = NULL;
  * Profile Attributes - variables
  */
 uint8 writerAttr_Flg = FALSE;
-
+uint8 configLimit_Flg = FALSE;
 // Simple Profile Service attribute
 static CONST gattAttrType_t simpleProfileService = { ATT_BT_UUID_SIZE, simpleProfileServUUID };
 
@@ -692,9 +692,14 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
       {
         case SIMPLEPROFILE_CHAR1_UUID:
 		  if( len == sizeof(simpleProfileChar1))  
-		  {
+		  {			
 			VOID memcpy( (uint8 *)pAttr->pValue,  pValue, len );
-			notifyApp = SIMPLEPROFILE_CHAR1;		
+			if((pAttr->pValue[0] == 0xFE) && (pAttr->pValue[1] == 0x01))
+			{
+			  uint8_t value[2] = {0xFE, 0x02};
+			  SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR1, sizeof(uint16_t), value);
+			  configLimit_Flg = TRUE;
+			}		
 		  }
 		  else
 		  {
@@ -703,7 +708,7 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 		  break;
 		  
 		case SIMPLEPROFILE_CHAR2_UUID:  
-		  if( len == sizeof(simpleProfileChar2))  
+		  if( (len == sizeof(simpleProfileChar2)) && (TRUE == configLimit_Flg))  
 		  {
 			VOID memcpy( (uint8 *)pAttr->pValue,  pValue, len );
 			VOID memcpy( &ibeaconInf_Config.uuidValue[0], pValue, len );
@@ -717,7 +722,7 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 		  break;		  
 		  
         case SIMPLEPROFILE_CHAR3_UUID:
-		  if( len == sizeof(simpleProfileChar3))  
+		  if( (len == sizeof(simpleProfileChar3)) && (TRUE == configLimit_Flg))  
 		  {
 			VOID memcpy( (uint8 *)pAttr->pValue,  pValue, len );
 			VOID memcpy( &ibeaconInf_Config.txPower, pValue, len );
@@ -731,7 +736,7 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 		  break;
 		  
         case SIMPLEPROFILE_CHAR4_UUID:
-		  if( len == sizeof(simpleProfileChar4))  
+		  if( (len == sizeof(simpleProfileChar4)) && (TRUE == configLimit_Flg))  
 		  {
 			VOID memcpy( (uint8 *)pAttr->pValue,  pValue, len );
 			notifyApp = SIMPLEPROFILE_CHAR4;
@@ -743,7 +748,7 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 		  break;
 		  
         case SIMPLEPROFILE_CHAR5_UUID:
-		  if( len == sizeof(simpleProfileChar5))  
+		  if( (len == sizeof(simpleProfileChar5)) && (TRUE == configLimit_Flg))  
 		  {
 			VOID memcpy( (uint8 *)pAttr->pValue,  pValue, len );
 			VOID memcpy( &ibeaconInf_Config.majorValue[0], pValue, len );
@@ -757,7 +762,7 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 		  break;
 		  
         case SIMPLEPROFILE_CHAR6_UUID:
-		  if( len == sizeof(simpleProfileChar6))  
+		  if( (len == sizeof(simpleProfileChar6)) && (TRUE == configLimit_Flg))  
 		  {
 			VOID memcpy( (uint8 *)pAttr->pValue,  pValue, len );
 			VOID memcpy( &ibeaconInf_Config.minorValue[0], pValue, len );
@@ -771,7 +776,7 @@ static bStatus_t simpleProfile_WriteAttrCB(uint16_t connHandle,
 		  break;
 		  
         case SIMPLEPROFILE_CHAR7_UUID:
-		  if( len == sizeof(simpleProfileChar7))  
+		  if( (len == sizeof(simpleProfileChar7)) && (TRUE == configLimit_Flg))  
 		  {
 			VOID memcpy( (uint8 *)pAttr->pValue,  pValue, len );
 			VOID memcpy( &ibeaconInf_Config.txInterval, pValue, len );
