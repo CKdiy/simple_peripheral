@@ -599,6 +599,7 @@ static void SimpleBLEPeripheral_init(void)
 	
     memcpy(&hw[10], &ibeaconInf_Config.hwvr[0], sizeof(uint32_t));
     DevInfo_SetParameter(DEVINFO_HARDWARE_REV, sizeof(hw), hw);
+    DevInfo_SetParameter(DEVINFO_MANUFACTUREDATE, 10, &ibeaconInf_Config.mDate[0]);
   }
   
   if( ibeaconInf_Config.atFlag == (0xFF - 1) )
@@ -1313,6 +1314,8 @@ static void SimpleBLEPeripheral_uart0Task(void)
 			}
 			//txInterval
 			memcpy( &ibeaconInf_Config.txInterval, &datebuf[40], sizeof(uint8_t) );
+			//mdate
+			memcpy(&ibeaconInf_Config.mDate[0], &datebuf[25], 10);
 			
 			/***** 用于通过生产软件 ***********/
 			memcpy(date, &datebuf[25], sizeof(date));
