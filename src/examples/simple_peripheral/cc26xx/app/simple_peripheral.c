@@ -515,6 +515,8 @@ static void SimpleBLEPeripheral_init(void)
 		case 20: advInt = DEFAULT_ADVERTISING_INTERVAL/2; //50ms
 	        break;			
 		case 30: advInt = 48;                             //30ms test
+	        break;	
+		case 50: advInt = 32;                             //20ms test
 	        break;			
 	    default: advInt = DEFAULT_ADVERTISING_INTERVAL * 3;
 		    break;       
