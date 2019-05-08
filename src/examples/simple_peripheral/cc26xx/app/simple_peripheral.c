@@ -596,6 +596,8 @@ static void SimpleBLEPeripheral_init(void)
                                &ibeaconInf_Config.minorValue[0]);
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR7, sizeof(uint8_t),
                                &ibeaconInf_Config.txInterval);	
+    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR60, sizeof(uint8_t),
+                               &ibeaconInf_Config.Rxp);
 	
     memcpy(&hw[10], &ibeaconInf_Config.hwvr[0], sizeof(uint32_t));
     DevInfo_SetParameter(DEVINFO_HARDWARE_REV, sizeof(hw), hw);

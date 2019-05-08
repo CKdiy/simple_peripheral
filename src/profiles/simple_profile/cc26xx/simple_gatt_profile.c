@@ -69,7 +69,7 @@
  * CONSTANTS
  */
 
-#define SERVAPP_NUM_ATTR_SUPPORTED        15
+#define SERVAPP_NUM_ATTR_SUPPORTED        17
 
 /*********************************************************************
  * TYPEDEFS
@@ -124,6 +124,12 @@ CONST uint8 simpleProfilechar6UUID[ATT_BT_UUID_SIZE] =
 CONST uint8 simpleProfilechar7UUID[ATT_BT_UUID_SIZE] =
 {
   LO_UINT16(SIMPLEPROFILE_CHAR7_UUID), HI_UINT16(SIMPLEPROFILE_CHAR7_UUID)
+};
+
+// Characteristic 60 UUID: 0xFF60
+CONST uint8 simpleProfilechar60UUID[ATT_BT_UUID_SIZE] =
+{
+  LO_UINT16(SIMPLEPROFILE_CHAR60_UUID), HI_UINT16(SIMPLEPROFILE_CHAR60_UUID)
 };
 
 /*********************************************************************
@@ -190,6 +196,12 @@ static uint8 simpleProfileChar7Props = GATT_PROP_READ | GATT_PROP_WRITE;
 
 // Characteristic 7Value
 static uint8 simpleProfileChar7 = 0;
+
+// Simple Profile Characteristic 60 Properties
+static uint8 simpleProfileChar60Props = GATT_PROP_READ;
+
+// Characteristic 60 Value
+static uint8 simpleProfileChar60 = 0;
 
 /*********************************************************************
  * Profile Attributes - Table
@@ -315,6 +327,22 @@ static gattAttribute_t simpleProfileAttrTbl[SERVAPP_NUM_ATTR_SUPPORTED] =
         GATT_PERMIT_READ | GATT_PERMIT_WRITE,
         0,
         &simpleProfileChar7
+      },
+
+	// Characteristic 60 Declaration
+    {
+      { ATT_BT_UUID_SIZE, characterUUID },
+      GATT_PERMIT_READ,
+      0,
+      &simpleProfileChar60Props
+    },
+
+      // Characteristic Value 60 : RXP
+      {
+        { ATT_BT_UUID_SIZE, simpleProfilechar60UUID },
+        GATT_PERMIT_READ ,
+        0,
+        &simpleProfileChar60
       },
 };
 
@@ -505,6 +533,17 @@ bStatus_t SimpleProfile_SetParameter( uint8 param, uint8 len, void *value )
       }
       break;
 	  
+    case SIMPLEPROFILE_CHAR60:
+      if ( len == sizeof(simpleProfileChar60) )
+      {
+        simpleProfileChar60 = *((uint8*)value);   
+      }
+      else
+      {
+        ret = bleInvalidRange;
+      }
+      break;	  
+	  
     default:
       ret = INVALIDPARAMETER;
       break;
@@ -559,6 +598,10 @@ bStatus_t SimpleProfile_GetParameter( uint8 param, void *value )
       *((uint8*)value) = simpleProfileChar7;
       break;
 
+    case SIMPLEPROFILE_CHAR60:
+      *((uint8*)value) = simpleProfileChar60;
+      break;
+	  
     default:
       ret = INVALIDPARAMETER;
       break;
@@ -635,6 +678,11 @@ static bStatus_t simpleProfile_ReadAttrCB(uint16_t connHandle,
       case SIMPLEPROFILE_CHAR7_UUID:
         *pLen = sizeof(simpleProfileChar7);
         VOID memcpy( pValue, pAttr->pValue, sizeof(simpleProfileChar7) );
+        break;
+
+      case SIMPLEPROFILE_CHAR60_UUID:
+        *pLen = sizeof(simpleProfileChar60);
+        VOID memcpy( pValue, pAttr->pValue, sizeof(simpleProfileChar60) );
         break;
 		
       default:

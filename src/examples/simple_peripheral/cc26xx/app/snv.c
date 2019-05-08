@@ -87,6 +87,7 @@ static int DevInf_Snv_Init(uint8_t len)
 	ptr->ibeaconinf_config.txPower       = 0;
 	ptr->ibeaconinf_config.txInterval    = 3;
 	ptr->ibeaconinf_config.initFlag      = 0xFF - 1;
+	ptr->ibeaconinf_config.Rxp           = 0xB5;
 	memcpy(ptr->ibeaconinf_config.majorValue, default_Major, sizeof(uint16_t));
 	memcpy(ptr->ibeaconinf_config.minorValue, default_Minor, sizeof(uint16_t));
     memcpy(ptr->ibeaconinf_config.uuidValue,  default_Uuid,  sizeof(default_Uuid));
