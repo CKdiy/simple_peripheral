@@ -151,7 +151,7 @@ static uint8 devInfoSerialNumber[13] = "a02c2f151b15";
 
 // Firmware Revision String characteristic
 static uint8 devInfoFirmwareRevProps = GATT_PROP_READ;
-static uint8 devInfoFirmwareRev[15] = "FMVERSION_0001";
+static uint8 devInfoFirmwareRev[15] = "FMVERSION_0002";
 
 // Hardware Revision String characteristic
 static uint8 devInfoHardwareRevProps = GATT_PROP_READ;
