@@ -280,7 +280,7 @@ static uint8_t advertData[] =
 const uint8_t D_FRT[10] ={'2','0','1','9','-','0','4','-','0','1'};                //固件发布日期 必须与设备信息一致 
 const uint8_t D_FR[14]={'F','M','V','E','R','S','I','O','N','_','0','0','0','1'}; //固件版本      必须与设备信息一致 
 const uint8_t D_CKey[16]={0xDE,0x48,0x2B,0x1C,0x22,0x1C,0x6C,0x30,0x3C,0xF0,0x50,0xEB,0x00,0x20,0xB0,0xBD}; //与生产软件配合使用
-
+uint8_t hw[15] ={'H','W','V','E','R','S','I','O','N','_','0','0','0','1','\0'};  
 // GAP GATT Attributes
 static uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "Beelinker";
 
@@ -556,7 +556,14 @@ static void SimpleBLEPeripheral_init(void)
 	
     HCI_EXT_SetTxPowerCmd(txpower);
   }
- 
+  
+  { 
+    memcpy(&hw[10], &ibeaconInf_Config.hwvr[0], sizeof(uint32_t));
+    DevInfo_SetParameter(DEVINFO_HARDWARE_REV, sizeof(hw), hw);
+    ibeaconInf_Config.mDate[10] = '\0';
+    DevInfo_SetParameter(DEVINFO_MANUFACTUREDATE, 11, &ibeaconInf_Config.mDate[0]);
+  }
+  
   // Initialize GATT attributes
   GGS_AddService(GATT_ALL_SERVICES);           // GAP
   GATTServApp_AddService(GATT_ALL_SERVICES);   // GATT attributes
@@ -580,7 +587,6 @@ static void SimpleBLEPeripheral_init(void)
   // Setup the SimpleProfile Characteristic Values
   {
     uint8_t charValue1[] = {0x34,0x12}; 
-    uint8_t hw[14] ={'H','W','V','E','R','S','I','O','N','_','0','0','0','1'}; 
 	
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR1, sizeof(uint16_t),
                                charValue1);
@@ -598,10 +604,6 @@ static void SimpleBLEPeripheral_init(void)
                                &ibeaconInf_Config.txInterval);	
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR60, sizeof(uint8_t),
                                &ibeaconInf_Config.Rxp);
-	
-    memcpy(&hw[10], &ibeaconInf_Config.hwvr[0], sizeof(uint32_t));
-    DevInfo_SetParameter(DEVINFO_HARDWARE_REV, sizeof(hw), hw);
-    DevInfo_SetParameter(DEVINFO_MANUFACTUREDATE, 10, &ibeaconInf_Config.mDate[0]);
   }
   
   if( ibeaconInf_Config.atFlag == (0xFF - 1) )

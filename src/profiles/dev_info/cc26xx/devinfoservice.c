@@ -357,7 +357,7 @@ bStatus_t DevInfo_SetParameter( uint8 param, uint8 len, void *value )
     case DEVINFO_FWRELEASETIME:
       if (len <= DEVINFO_STR_ATTR_LEN)
       {
-        memset(devInfoFwReleaseTime, 0, DEVINFO_STR_ATTR_LEN+1);
+        memset(devInfoFwReleaseTime, 0, 11);
         memcpy(devInfoFwReleaseTime, value, len);
       }
       else
@@ -368,7 +368,7 @@ bStatus_t DevInfo_SetParameter( uint8 param, uint8 len, void *value )
     case DEVINFO_SERIAL_NUMBER:
       if (len <= DEVINFO_STR_ATTR_LEN)
       {
-        memset(devInfoSerialNumber, 0, DEVINFO_STR_ATTR_LEN+1);
+        memset(devInfoSerialNumber, 0, 13);
         memcpy(devInfoSerialNumber, value, len);
       }
       else
@@ -380,7 +380,7 @@ bStatus_t DevInfo_SetParameter( uint8 param, uint8 len, void *value )
     case DEVINFO_FIRMWARE_REV:
       if (len <= DEVINFO_STR_ATTR_LEN)
       {
-        memset(devInfoFirmwareRev, 0, DEVINFO_STR_ATTR_LEN+1);
+        memset(devInfoFirmwareRev, 0, DEVINFO_STR_ATTR_LEN);
         memcpy(devInfoFirmwareRev, value, len);
       }
       else
@@ -392,7 +392,7 @@ bStatus_t DevInfo_SetParameter( uint8 param, uint8 len, void *value )
     case DEVINFO_HARDWARE_REV:
       if (len <= DEVINFO_STR_ATTR_LEN)
       {
-        memset(devInfoHardwareRev, 0, DEVINFO_STR_ATTR_LEN+1);
+        memset(devInfoHardwareRev, 0, DEVINFO_STR_ATTR_LEN);
         memcpy(devInfoHardwareRev, value, len);
       }
       else
@@ -404,7 +404,7 @@ bStatus_t DevInfo_SetParameter( uint8 param, uint8 len, void *value )
     case DEVINFO_MANUFACTUREDATE:
       if (len <= DEVINFO_STR_ATTR_LEN)
       {
-        memset(devInfoManufactureDate, 0, DEVINFO_STR_ATTR_LEN+1);
+        memset(devInfoManufactureDate, 0, 11);
         memcpy(devInfoManufactureDate, value, len);
       }
       else
