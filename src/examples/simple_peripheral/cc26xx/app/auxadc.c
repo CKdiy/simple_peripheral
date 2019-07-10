@@ -54,7 +54,11 @@ uint16_t adc_OneShot_Read(void)
 	
 	res = (float)adcValue;
 	
-	vbat = (res/4095)*43;
+	vbat =(res/4096)*43;
+	
+	vbat = vbat * 1.35;
+	
+	vbat += 8;
 	
     return (uint16_t)vbat;
 }

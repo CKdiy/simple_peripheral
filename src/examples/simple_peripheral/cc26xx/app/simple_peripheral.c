@@ -424,7 +424,7 @@ static void SimpleBLEPeripheral_init(void)
   
   Nvram_Init();
   SimpleBLEPeripheral_BleParameterGet();
-  adcvalue = adc_OneShot_Read() + 117;
+  adcvalue = adc_OneShot_Read();
   scanRspData[23] = adcvalue & 0xFF;
   scanRspData[24] = adcvalue >> 8;
   
@@ -447,6 +447,7 @@ static void SimpleBLEPeripheral_init(void)
   {
     // For all hardware platforms, device starts advertising upon initialization
     uint8_t initialAdvertEnable = TRUE;
+    uint8_t advertEnabled = FALSE;
 
     // By setting this to zero, the device will go into the waiting state after
     // being discoverable for 30.72 second, and will not being advertising again
@@ -466,9 +467,11 @@ static void SimpleBLEPeripheral_init(void)
 		memcpy(&advertData[9 + DEFAULT_UUID_LEN], &ibeaconInf_Config.majorValue, sizeof(uint32_t));
 	}
 	
-    // Set the GAP Role Parameters
     GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8_t),
                          &initialAdvertEnable);
+    // Disable non-connectable advertising.
+    GAPRole_SetParameter(GAPROLE_ADV_NONCONN_ENABLED, sizeof(uint8_t),
+                           &advertEnabled);	
     GAPRole_SetParameter(GAPROLE_ADVERT_OFF_TIME, sizeof(uint16_t),
                          &advertOffTime);
 
@@ -524,31 +527,27 @@ static void SimpleBLEPeripheral_init(void)
 	  
 	  switch(ibeaconInf_Config.txPower)
 	  {
-		case 0: txpower = HCI_EXT_TX_POWER_0_DBM;         //0dbm                       
+		case 0: txpower = HCI_EXT_TX_POWER_MINUS_21_DBM;  //-21dbm                       
 		    break;	  
-		case 1: txpower = HCI_EXT_TX_POWER_1_DBM;         //1dbm                     
+		case 1: txpower = HCI_EXT_TX_POWER_MINUS_18_DBM;  //-18dbm                     
 		    break;
-		case 2: txpower = HCI_EXT_TX_POWER_2_DBM;         //2dbm                      
+		case 2: txpower = HCI_EXT_TX_POWER_MINUS_12_DBM;  //-12dbm                      
 		    break;
-		case 3: txpower = HCI_EXT_TX_POWER_3_DBM;         //3dbm                   
+		case 3: txpower = HCI_EXT_TX_POWER_MINUS_9_DBM;   //-9dbm                   
 		    break;
-		case 4: txpower = HCI_EXT_TX_POWER_4_DBM;         //4dbm                  
+		case 4: txpower = HCI_EXT_TX_POWER_MINUS_6_DBM;   //-6dbm                  
 		    break;			
-		case 5: txpower = HCI_EXT_TX_POWER_5_DBM;         //5dbm                 
+		case 5: txpower = HCI_EXT_TX_POWER_MINUS_3_DBM;   //-3dbm                 
 		    break;			
-		case 6: txpower = HCI_EXT_TX_POWER_MINUS_3_DBM;   //-3dbm                        
+		case 6: txpower = HCI_EXT_TX_POWER_0_DBM;         //0dbm                        
 		    break;			
-		case 7: txpower = HCI_EXT_TX_POWER_MINUS_6_DBM;   //-6dbm 
-		    break;	
-		case 8: txpower = HCI_EXT_TX_POWER_MINUS_12_DBM;  //-12dbm  
-		    break;	
-		case 9: txpower = HCI_EXT_TX_POWER_MINUS_21_DBM;  //-21dbm  
-		    break;				
+		case 7: txpower = HCI_EXT_TX_POWER_2_DBM;         //2dbm 
+		    break;					
 	    default: txpower = HCI_EXT_TX_POWER_0_DBM; 
 		    break; 			
 	  } 
 	}
-	
+
     GAP_SetParamValue(TGAP_LIM_DISC_ADV_INT_MIN, advInt);
     GAP_SetParamValue(TGAP_LIM_DISC_ADV_INT_MAX, advInt);
     GAP_SetParamValue(TGAP_GEN_DISC_ADV_INT_MIN, advInt);
