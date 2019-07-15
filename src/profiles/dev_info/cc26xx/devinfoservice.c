@@ -143,7 +143,7 @@ static uint8 devInfoBtAddress[DEVINFO_BTADDRESS_LEN] = {0, 0, 0, 0, 0, 0};
 
 // Firmware Revision Release Time characteristic
 static uint8 devInfoFwReleaseTimeProps = GATT_PROP_READ;
-static uint8 devInfoFwReleaseTime[11] = "2019-04-01";
+static uint8 devInfoFwReleaseTime[11] = "2019-12-17";
 
 // Serial Number String characteristic
 static uint8 devInfoSerialNumberProps = GATT_PROP_READ;
@@ -151,7 +151,7 @@ static uint8 devInfoSerialNumber[13] = "a02c2f151b15";
 
 // Firmware Revision String characteristic
 static uint8 devInfoFirmwareRevProps = GATT_PROP_READ;
-static uint8 devInfoFirmwareRev[15] = "FMVERSION_0002";
+static uint8 devInfoFirmwareRev[15] = "FMVERSION_0004";
 
 // Hardware Revision String characteristic
 static uint8 devInfoHardwareRevProps = GATT_PROP_READ;
@@ -159,7 +159,7 @@ static uint8 devInfoHardwareRev[15] = "HWVERSION_0001";
 
 // Manufacture Date String characteristic
 static uint8 devInfoManufactureDateProps = GATT_PROP_READ;
-static uint8 devInfoManufactureDate[11] = "2019-04-01";
+static uint8 devInfoManufactureDate[11] = "2019-12-17";
 
 /*********************************************************************
  * Profile Attributes - Table

@@ -38,14 +38,13 @@ uint16_t adc_OneShot_Read(void)
 	
     /* Seclect auxIO */
     AUXADCSelectInput(ADC_COMPB_IN_AUXIO7);
-	
+
     /* Enable */
     AUXADCEnableSync(AUXADC_REF_FIXED, AUXADC_SAMPLE_TIME_10P6_US, AUXADC_TRIGGER_MANUAL);
-			
-    AUXADCGenManualTrigger();    
 	
 	usDelay(100);
-	
+    AUXADCGenManualTrigger();    	
+
     adcValue = AUXADCReadFifo()*10; 
 	
     AUXADCDisable();
@@ -54,11 +53,11 @@ uint16_t adc_OneShot_Read(void)
 	
 	res = (float)adcValue;
 	
-	vbat =(res/4096)*43;
+	vbat =((float)(res/4096))*43 + 6;
 	
 	vbat = vbat * 1.35;
 	
-	vbat += 8;
+	vbat += 3;
 	
     return (uint16_t)vbat;
 }
