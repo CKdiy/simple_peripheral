@@ -463,6 +463,7 @@ static void SimpleBLEPeripheral_init(void)
 	if(ibeaconInf_Config.initFlag != 0xFF)
 	{
 		memcpy(&scanRspData[19], &ibeaconInf_Config.majorValue[0], sizeof(uint32_t));
+		memcpy(&scanRspData[17], &ibeaconInf_Config.uuidValue[14], sizeof(uint16_t));
 		memcpy(&advertData[9], &ibeaconInf_Config.uuidValue, DEFAULT_UUID_LEN);
 		memcpy(&advertData[9 + DEFAULT_UUID_LEN], &ibeaconInf_Config.majorValue, sizeof(uint32_t));
 	}
