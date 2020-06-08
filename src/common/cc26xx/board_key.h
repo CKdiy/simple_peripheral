@@ -71,6 +71,7 @@ extern "C" {
 
 // Debounce timeout in milliseconds
 #define KEY_DEBOUNCE_TIMEOUT  200
+#define LED_FLASH_TIMEOUT     100  
 
 /*********************************************************************
  * TYPEDEFS
@@ -95,7 +96,8 @@ typedef void (*keysPressedCB_t)(uint8_t keysPressed);
  * @return  none
  */
 void Board_initKeys(keysPressedCB_t appKeyCB);
-uint_t Bord_GetKey_Pin_Status(void);
+int Bord_GetKey_Pin_Status(void);
+void Board_LedCtrl(uint8_t status);
 /*********************************************************************
 *********************************************************************/
 

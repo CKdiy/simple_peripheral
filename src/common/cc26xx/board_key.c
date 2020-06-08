@@ -74,7 +74,8 @@
  */
 static void Board_keyChangeHandler(UArg a0);
 static void Board_keyCallback(PIN_Handle hPin, PIN_Id pinId);
-
+static void Board_ledFlashHandler(UArg a0);
+void Board_LedCtrl(uint8_t status);
 /*******************************************************************************
  * EXTERNAL VARIABLES
  */
@@ -88,6 +89,8 @@ static uint8_t keysPressed;
 
 // Key debounce clock
 static Clock_Struct keyChangeClock;
+
+static Clock_Struct ledFlashClock;
 
 // Pointer to application callback
 keysPressedCB_t appKeyChangeHandler = NULL;
@@ -109,6 +112,7 @@ PIN_Config keyPinsCfg[] =
     Board_KEY_RIGHT     | PIN_GPIO_OUTPUT_DIS  | PIN_INPUT_EN  |  PIN_PULLUP,
 #endif
 	Board_KEY_DOWN      | PIN_GPIO_OUTPUT_DIS  | PIN_INPUT_EN  |  PIN_PULLUP,
+	Board_DK_LED0       | PIN_GPIO_OUTPUT_EN   | PIN_INPUT_DIS |  PIN_GPIO_HIGH  |  PIN_PULLUP,
     PIN_TERMINATE
 };
 
@@ -164,6 +168,9 @@ void Board_initKeys(keysPressedCB_t appKeyCB)
   // Setup keycallback for keys
   Util_constructClock(&keyChangeClock, Board_keyChangeHandler,
                       KEY_DEBOUNCE_TIMEOUT, 0, false, 0);
+  
+  Util_constructClock(&ledFlashClock, Board_ledFlashHandler,
+                      LED_FLASH_TIMEOUT, 0, false, 0);
 
   // Set the application callback
   appKeyChangeHandler = appKeyCB;
@@ -223,6 +230,10 @@ static void Board_keyCallback(PIN_Handle hPin, PIN_Id pinId)
   if ( PIN_getInputValue(Board_KEY_DOWN) == 0 )
   {
     keysPressed |= KEY_DOWN;
+	
+	Board_LedCtrl(Board_LED_ON);
+	
+	Util_startClock(&ledFlashClock);
   }
   
   Util_startClock(&keyChangeClock);
@@ -246,9 +257,31 @@ static void Board_keyChangeHandler(UArg a0)
   }
 }
 
-uint_t Bord_GetKey_Pin_Status(void)
+static void Board_ledFlashHandler(UArg a0)
+{
+	Board_LedCtrl(Board_LED_OFF);
+}
+
+int Bord_GetKey_Pin_Status(void)
 {
 	return PIN_getInputValue(Board_KEY_DOWN);
+}
+
+/*********************************************************************
+ * @fn      Board_LedCtrl
+ *
+ * @brief   Control Led light flashing
+ *
+ * @param   Board_LED_ON/Board_LED_OFF
+ *
+ * @return  none
+ */
+void Board_LedCtrl(uint8_t status)
+{
+	if(Board_LED_ON == status)
+		PIN_setOutputValue(hKeyPins, Board_DK_LED0, 0);
+	else
+	  	PIN_setOutputValue(hKeyPins, Board_DK_LED0, 1);
 }
 /*********************************************************************
 *********************************************************************/
