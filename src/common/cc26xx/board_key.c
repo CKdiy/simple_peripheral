@@ -108,6 +108,7 @@ PIN_Config keyPinsCfg[] =
     Board_KEY_LEFT      | PIN_GPIO_OUTPUT_DIS  | PIN_INPUT_EN  |  PIN_PULLUP,
     Board_KEY_RIGHT     | PIN_GPIO_OUTPUT_DIS  | PIN_INPUT_EN  |  PIN_PULLUP,
 #endif
+	Board_KEY_DOWN      | PIN_GPIO_OUTPUT_DIS  | PIN_INPUT_EN  |  PIN_PULLUP,
     PIN_TERMINATE
 };
 
@@ -142,6 +143,8 @@ void Board_initKeys(keysPressedCB_t appKeyCB)
   PIN_setConfig(hKeyPins, PIN_BM_IRQ, Board_KEY_LEFT    | PIN_IRQ_NEGEDGE);
   PIN_setConfig(hKeyPins, PIN_BM_IRQ, Board_KEY_RIGHT   | PIN_IRQ_NEGEDGE);
 #endif
+  
+  PIN_setConfig(hKeyPins, PIN_BM_IRQ, Board_KEY_DOWN    | PIN_IRQ_NEGEDGE);
 
 #ifdef POWER_SAVING
   //Enable wakeup
@@ -155,6 +158,7 @@ void Board_initKeys(keysPressedCB_t appKeyCB)
   PIN_setConfig(hKeyPins, PINCC26XX_BM_WAKEUP, Board_KEY_LEFT | PINCC26XX_WAKEUP_NEGEDGE);
   PIN_setConfig(hKeyPins, PINCC26XX_BM_WAKEUP, Board_KEY_RIGHT | PINCC26XX_WAKEUP_NEGEDGE);
 #endif
+  PIN_setConfig(hKeyPins, PINCC26XX_BM_WAKEUP, Board_KEY_DOWN | PINCC26XX_WAKEUP_NEGEDGE);
 #endif //POWER_SAVING
 
   // Setup keycallback for keys
@@ -216,6 +220,11 @@ static void Board_keyCallback(PIN_Handle hPin, PIN_Id pinId)
   }
 #endif
 
+  if ( PIN_getInputValue(Board_KEY_DOWN) == 0 )
+  {
+    keysPressed |= KEY_DOWN;
+  }
+  
   Util_startClock(&keyChangeClock);
 }
 
@@ -235,6 +244,11 @@ static void Board_keyChangeHandler(UArg a0)
     // Notify the application
     (*appKeyChangeHandler)(keysPressed);
   }
+}
+
+uint_t Bord_GetKey_Pin_Status(void)
+{
+	return PIN_getInputValue(Board_KEY_DOWN);
 }
 /*********************************************************************
 *********************************************************************/

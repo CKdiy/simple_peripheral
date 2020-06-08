@@ -172,6 +172,8 @@
 #define SBP_CONN_EVT_END_EVT                  0x0008
 #define SBP_SYSTEM_RESTAR_EVT                 0x0010
 #define SBP_CLEAR_WDT_EVT                     0x0020
+   
+#define SBO_KEY_CHANGE_EVT                    0x0004 
 
 #define DEFAULT_UART_AT_TEST_LEN              4
 #define DEFAULT_UART_AT_CMD_LEN               49
@@ -308,6 +310,7 @@ static void SimpleBLEPeripheral_processAppMsg(sbpEvt_t *pMsg);
 static void SimpleBLEPeripheral_processStateChangeEvt(gaprole_States_t newState);
 static void SimpleBLEPeripheral_processCharValueChangeEvt(uint8_t paramID);
 static void SimpleBLEPeripheral_clockHandler(UArg arg);
+void SimpleBLEObserver_keyChangeHandler(uint8 keys);
 
 static void SimpleBLEPeripheral_sendAttRsp(void);
 static void SimpleBLEPeripheral_freeAttRsp(uint8_t status);
@@ -327,6 +330,7 @@ static void uart0BoardReciveCallback(UART_Handle handle, void *buf, size_t count
 void SimpleBLEPeripheral_BleParameterGet(void);
 void SimpleBLEPeripheral_LowPowerMgr(void);
 uint8_t str_Compara( uint8_t *ptr1, uint8_t *ptr2, uint8_t len);
+static void SimpleBLEObserver_handleKeys(uint8 shift, uint8 keys);
 
 #ifdef IWDG_ENABLE 
 void wdtInitFxn(void);
@@ -421,6 +425,8 @@ static void SimpleBLEPeripheral_init(void)
 
   // Setup the GAP
   GAP_SetParamValue(TGAP_CONN_PAUSE_PERIPHERAL, DEFAULT_CONN_PAUSE_PERIPHERAL);
+  
+  Board_initKeys(SimpleBLEObserver_keyChangeHandler);
   
   Nvram_Init();
   SimpleBLEPeripheral_BleParameterGet();
@@ -933,11 +939,56 @@ static void SimpleBLEPeripheral_processAppMsg(sbpEvt_t *pMsg)
     case SBP_CHAR_CHANGE_EVT:
       SimpleBLEPeripheral_processCharValueChangeEvt(pMsg->hdr.state);
       break;
+	  
+    case SBO_KEY_CHANGE_EVT:
+      SimpleBLEObserver_handleKeys(0, pMsg->hdr.state);
+      break;	  
 
     default:
       // Do nothing.
       break;
   }
+}
+
+/*********************************************************************
+ * @fn      SimpleBLEObserver_handleKeys
+ *
+ * @brief   Handles all key events for this device.
+ *
+ * @param   shift - true if in shift/alt.
+ * @param   keys - bit field for key events. Valid entries:
+ *                 HAL_KEY_SW_2
+ *                 HAL_KEY_SW_1
+ *
+ * @return  none
+ */
+static void SimpleBLEObserver_handleKeys(uint8 shift, uint8 keys)
+{
+  (void)shift;  // Intentionally unreferenced parameter
+
+  if (keys & KEY_DOWN)
+  {
+    if(Bord_GetKey_Pin_Status())
+	{
+	  ;
+	}
+  }  
+}
+
+/*********************************************************************
+ * @fn      SimpleBLEObserver_keyChangeHandler
+ *
+ * @brief   Key event handler function
+ *
+ * @param   keys pressed
+ *
+ * @return  none
+ */
+void SimpleBLEObserver_keyChangeHandler(uint8 keys)
+{
+  SimpleBLEPeripheral_enqueueMsg(SBO_KEY_CHANGE_EVT, keys);
+  
+  Semaphore_post(sem);
 }
 
 /*********************************************************************
