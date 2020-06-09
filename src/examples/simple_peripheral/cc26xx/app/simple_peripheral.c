@@ -171,7 +171,6 @@
 #define SBP_PERIODIC_EVT                      0x0004
 #define SBP_CONN_EVT_END_EVT                  0x0008
 #define SBP_SYSTEM_RESTAR_EVT                 0x0010
-#define SBP_CLEAR_WDT_EVT                     0x0020
    
 #define SBO_KEY_CHANGE_EVT                    0x0004 
 
@@ -219,7 +218,6 @@ static ICall_Semaphore sem;
 // Clock instances for internal periodic events.
 static Clock_Struct periodicClock;
 static Clock_Struct sysRestarClock;
-static Clock_Struct clearWdtClock;
 
 // Queue object used for app messages
 static Queue_Struct appMsg;
@@ -438,16 +436,13 @@ static void SimpleBLEPeripheral_init(void)
   	Open_uart0( uart0BoardReciveCallback );
   else
   {
-#ifdef IWDG_ENABLE
-    wdtInitFxn();
-	Util_constructClock(&clearWdtClock, SimpleBLEPeripheral_clockHandler,
-                         SBP_PERIODIC_EVT_PERIOD_2s, 0, false, SBP_CLEAR_WDT_EVT);	
-	
-	Util_startClock(&clearWdtClock);
-#endif
   	Power_releaseConstraint(PowerCC26XX_SB_DISALLOW);
 	Power_releaseConstraint(PowerCC26XX_IDLE_PD_DISALLOW);
   }
+  
+#ifdef IWDG_ENABLE
+    wdtInitFxn();
+#endif
   
   // Setup the GAP Peripheral Role Profile
   {
@@ -718,14 +713,10 @@ static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
         events &= ~SBP_SYSTEM_RESTAR_EVT;
         HCI_EXT_ResetSystemCmd(HCI_EXT_RESET_SYSTEM_HARD);
     }
-	else if( events & SBP_CLEAR_WDT_EVT )
-	{
-	    events &= ~SBP_CLEAR_WDT_EVT;
-	    Util_startClock(&clearWdtClock);
+
 #ifdef IWDG_ENABLE 
 	    Watchdog_clear(watchdog);
 #endif		
-	}
 	
 	if( ibeaconInf_Config.atFlag != (0xFF - 1) )
 		SimpleBLEPeripheral_uart0Task();
