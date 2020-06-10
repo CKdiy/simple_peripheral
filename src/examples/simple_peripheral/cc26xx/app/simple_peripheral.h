@@ -73,6 +73,17 @@ extern "C"
 /*********************************************************************
  * FUNCTIONS
  */
+enum
+{
+	ADV_MODE = 0,
+	SLEEP_MODE,
+};
+
+typedef struct
+{
+	char key_tick;
+	char app_mode;
+}APP_MG;
 
 /*
  * Task creation function for the Simple BLE Peripheral.

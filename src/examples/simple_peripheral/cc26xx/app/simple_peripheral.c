@@ -149,8 +149,9 @@
 #define SBP_PERIODIC_EVT_PERIOD               60000 //60s
 
 #define SBP_PERIODIC_EVT_PERIOD_10MIN         600000 //10min
-
 #define SBP_PERIODIC_EVT_PERIOD_2s            2000 //2s
+#define SBP_PERIODIC_EVT_PERIOD_1s            1000 //1s
+
 
 #ifdef FEATURE_OAD
 // The size of an OAD packet.
@@ -171,12 +172,15 @@
 #define SBP_PERIODIC_EVT                      0x0004
 #define SBP_CONN_EVT_END_EVT                  0x0008
 #define SBP_SYSTEM_RESTAR_EVT                 0x0010
-   
+#define SBP_MYTICK_CLOCK_EVT                  0x0020
+
 #define SBO_KEY_CHANGE_EVT                    0x0004 
 
 #define DEFAULT_UART_AT_TEST_LEN              4
 #define DEFAULT_UART_AT_CMD_LEN               49
 #define DEFAULT_UART_AT_RSP_LEN               6
+
+#define DEFAULT_MYTICK_NUM               	  3
 /*********************************************************************
  * TYPEDEFS
  */
@@ -218,6 +222,7 @@ static ICall_Semaphore sem;
 // Clock instances for internal periodic events.
 static Clock_Struct periodicClock;
 static Clock_Struct sysRestarClock;
+static Clock_Struct myTickClock;
 
 // Queue object used for app messages
 static Queue_Struct appMsg;
@@ -231,6 +236,8 @@ static Queue_Handle hOadQ;
 
 // events flag for internal application events.
 static uint16_t events;
+
+static APP_MG appMg;
 
 // Task configuration
 Task_Struct sbpTask;
@@ -420,6 +427,9 @@ static void SimpleBLEPeripheral_init(void)
   
   Util_constructClock(&sysRestarClock, SimpleBLEPeripheral_clockHandler,
                       SBP_PERIODIC_EVT_PERIOD_10MIN, 0, false, SBP_SYSTEM_RESTAR_EVT);
+  
+  Util_constructClock(&myTickClock, SimpleBLEPeripheral_clockHandler,
+                      SBP_PERIODIC_EVT_PERIOD_1s, 0, false, SBP_MYTICK_CLOCK_EVT);
 
   // Setup the GAP
   GAP_SetParamValue(TGAP_CONN_PAUSE_PERIPHERAL, DEFAULT_CONN_PAUSE_PERIPHERAL);
@@ -428,6 +438,10 @@ static void SimpleBLEPeripheral_init(void)
   
   Nvram_Init();
   SimpleBLEPeripheral_BleParameterGet();
+  
+  appMg.key_tick = 0;
+  appMg.app_mode = ADV_MODE;
+  
   adcvalue = adc_OneShot_Read();
   scanRspData[23] = adcvalue & 0xFF;
   scanRspData[24] = adcvalue >> 8;
@@ -639,6 +653,7 @@ static void SimpleBLEPeripheral_init(void)
  */
 static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
 {
+  uint8_t advertEnabled = FALSE;
   // Initialize application
   SimpleBLEPeripheral_init();
 
@@ -713,6 +728,44 @@ static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
         events &= ~SBP_SYSTEM_RESTAR_EVT;
         HCI_EXT_ResetSystemCmd(HCI_EXT_RESET_SYSTEM_HARD);
     }
+	else if(events & SBP_MYTICK_CLOCK_EVT)
+	{
+		events &= ~SBP_MYTICK_CLOCK_EVT;
+		
+		if(!Bord_GetKey_Pin_Status())
+		{
+			appMg.key_tick ++;
+			
+			if(appMg.key_tick >= DEFAULT_MYTICK_NUM)
+			{
+				advertEnabled = FALSE;
+				GAPRole_SetParameter(GAPROLE_ADV_NONCONN_ENABLED, sizeof(uint8_t),
+                           			 &advertEnabled);
+				
+				Util_stopClock(&periodicClock);
+				Util_stopClock(&sysRestarClock);
+	
+				appMg.app_mode = SLEEP_MODE;
+				
+				while(appMg.key_tick --)
+				{
+					Board_LedCtrl(Board_LED_ON);
+					CPUdelay(12000*50);
+					Board_LedCtrl(Board_LED_OFF);
+					CPUdelay(12000*50);
+				}
+				
+				/* Set Wakeup Io*/
+				IOCIOShutdownSet(IOID_0, IOC_WAKE_ON_LOW);
+				/* Enter Shutdown Mode*/
+				Power_shutdown(Power_ENTERING_SHUTDOWN, 0);
+			}
+			else
+			  	Util_startClock(&myTickClock);
+		}
+		else
+		  	appMg.key_tick = 0;
+	}
 
 #ifdef IWDG_ENABLE 
 	    Watchdog_clear(watchdog);
@@ -959,10 +1012,7 @@ static void SimpleBLEObserver_handleKeys(uint8 shift, uint8 keys)
 
   if (keys & KEY_DOWN)
   {
-    if(Bord_GetKey_Pin_Status())
-	{
-	  ;
-	}
+	Util_startClock(&myTickClock);
   }  
 }
 
