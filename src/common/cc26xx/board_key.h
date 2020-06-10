@@ -96,6 +96,7 @@ typedef void (*keysPressedCB_t)(uint8_t keysPressed);
  */
 void Board_initKeys(keysPressedCB_t appKeyCB);
 int Bord_GetKey_Pin_Status(void);
+void Board_LedCtrl(uint8_t status);
 /*********************************************************************
 *********************************************************************/
 

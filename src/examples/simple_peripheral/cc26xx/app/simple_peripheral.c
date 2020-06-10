@@ -434,14 +434,12 @@ static void SimpleBLEPeripheral_init(void)
   // Setup the GAP
   GAP_SetParamValue(TGAP_CONN_PAUSE_PERIPHERAL, DEFAULT_CONN_PAUSE_PERIPHERAL);
   
-  Board_initKeys(SimpleBLEObserver_keyChangeHandler);
-  
   Nvram_Init();
   SimpleBLEPeripheral_BleParameterGet();
   
   appMg.key_tick = 0;
-  appMg.app_mode = ADV_MODE;
-  
+  appMg.app_mode = ibeaconInf_Config.sys_Mode;
+
   adcvalue = adc_OneShot_Read();
   scanRspData[23] = adcvalue & 0xFF;
   scanRspData[24] = adcvalue >> 8;
@@ -450,6 +448,8 @@ static void SimpleBLEPeripheral_init(void)
   	Open_uart0( uart0BoardReciveCallback );
   else
   {
+	Board_initKeys(SimpleBLEObserver_keyChangeHandler);
+	
   	Power_releaseConstraint(PowerCC26XX_SB_DISALLOW);
 	Power_releaseConstraint(PowerCC26XX_IDLE_PD_DISALLOW);
   }
@@ -628,18 +628,23 @@ static void SimpleBLEPeripheral_init(void)
   SimpleProfile_RegisterAppCBs(&SimpleBLEPeripheral_simpleProfileCBs);
 #endif //!FEATURE_OAD_ONCHIP
 
-  // Start the Device
-  VOID GAPRole_StartDevice(&SimpleBLEPeripheral_gapRoleCBs);
-  
-  Util_startClock(&sysRestarClock);
-  
-  // Register with GAP for HCI/Host messages
-  GAP_RegisterForMsgs(selfEntity);
+  if(appMg.app_mode != SLEEP_MODE)
+  {
+	// Start the Device
+	VOID GAPRole_StartDevice(&SimpleBLEPeripheral_gapRoleCBs);
+	
+	Util_startClock(&sysRestarClock);
+	
+	// Register with GAP for HCI/Host messages
+	GAP_RegisterForMsgs(selfEntity);
 
-  // Register for GATT local events and ATT Responses pending for transmission
-  GATT_RegisterForMsgs(selfEntity);
+	// Register for GATT local events and ATT Responses pending for transmission
+	GATT_RegisterForMsgs(selfEntity);
 
-  HCI_LE_ReadMaxDataLenCmd();
+	HCI_LE_ReadMaxDataLenCmd();
+  }
+  else
+	Util_startClock(&myTickClock);	
 }
 
 /*********************************************************************
@@ -738,33 +743,63 @@ static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
 			
 			if(appMg.key_tick >= DEFAULT_MYTICK_NUM)
 			{
-				advertEnabled = FALSE;
-				GAPRole_SetParameter(GAPROLE_ADV_NONCONN_ENABLED, sizeof(uint8_t),
-                           			 &advertEnabled);
-				
-				Util_stopClock(&periodicClock);
-				Util_stopClock(&sysRestarClock);
-	
-				appMg.app_mode = SLEEP_MODE;
-				
-				while(appMg.key_tick --)
+			  	if(appMg.app_mode == ADV_MODE)
 				{
-					Board_LedCtrl(Board_LED_ON);
-					CPUdelay(12000*50);
-					Board_LedCtrl(Board_LED_OFF);
-					CPUdelay(12000*50);
+					advertEnabled = FALSE;
+					GAPRole_SetParameter(GAPROLE_ADV_NONCONN_ENABLED, sizeof(uint8_t),
+										 &advertEnabled);
+					
+					Util_stopClock(&periodicClock);
+					Util_stopClock(&sysRestarClock);
+		
+					appMg.app_mode = SLEEP_MODE;
+					ibeaconInf_Config.sys_Mode = appMg.app_mode;
+					
+					Ble_WriteNv_Inf(BLE_NVID_CUST_START, &ibeaconInf_Config.txPower);
+					
+					appMg.key_tick = 5;
+					while(appMg.key_tick --)
+					{
+						Board_LedCtrl(Board_LED_ON);
+						CPUdelay(12000*100);
+						Board_LedCtrl(Board_LED_OFF);
+						CPUdelay(12000*100);
+					}
+					
+					/* Set Wakeup Io*/
+					IOCIOShutdownSet(IOID_0, IOC_WAKE_ON_LOW);
+					/* Enter Shutdown Mode*/
+					Power_shutdown(Power_ENTERING_SHUTDOWN, 0);
 				}
-				
-				/* Set Wakeup Io*/
-				IOCIOShutdownSet(IOID_0, IOC_WAKE_ON_LOW);
-				/* Enter Shutdown Mode*/
-				Power_shutdown(Power_ENTERING_SHUTDOWN, 0);
+				else if(appMg.app_mode == SLEEP_MODE)
+				{
+					appMg.app_mode = ADV_MODE;	
+					ibeaconInf_Config.sys_Mode = appMg.app_mode;
+					
+					Ble_WriteNv_Inf(BLE_NVID_CUST_START, &ibeaconInf_Config.txPower);
+					
+					Board_LedCtrl(Board_LED_ON);
+					CPUdelay(12000*3000);	
+					Board_LedCtrl(Board_LED_OFF);
+					
+					HCI_EXT_ResetSystemCmd(HCI_EXT_RESET_SYSTEM_HARD);	
+				}
 			}
 			else
 			  	Util_startClock(&myTickClock);
 		}
 		else
+		{
 		  	appMg.key_tick = 0;
+			
+			if(appMg.app_mode == SLEEP_MODE)
+			{
+				/* Set Wakeup Io*/
+				IOCIOShutdownSet(IOID_0, IOC_WAKE_ON_LOW);
+				/* Enter Shutdown Mode*/
+				Power_shutdown(Power_ENTERING_SHUTDOWN, 0);
+			}
+		}
 	}
 
 #ifdef IWDG_ENABLE 
@@ -1444,7 +1479,9 @@ static void SimpleBLEPeripheral_uart0Task(void)
 			Uart0_Write( &D_FR[10], 4);
 			Uart0_Write( D_CKey, 16);
 			
-			ibeaconInf_Config.atFlag = 0xFF -1;	
+			ibeaconInf_Config.atFlag = 0xFF -1;
+			
+			ibeaconInf_Config.sys_Mode = SLEEP_MODE;
 			
 			Ble_WriteNv_Inf( BLE_NVID_CUST_START, &ibeaconInf_Config.txPower);
 			

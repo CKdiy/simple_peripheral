@@ -12,7 +12,7 @@
 static const block_info_t fb[] =
 {
     /* block ID (must < 0xf)    size */
-	{BLE_NVID_DEVINF_START,       44},
+	{BLE_NVID_DEVINF_START,       45},
 };
 
 #define FB_SIZE         (sizeof(fb)/sizeof(block_info_t))
@@ -75,7 +75,7 @@ static int DevInf_Snv_Init(uint8_t len)
  	uint8_t		status;
 	
 	uint8_t default_Major[]={0x27, 0x18}; //10008
-	uint8_t default_Minor[]={0x27, 0x18}; //10008
+	uint8_t default_Minor[]={0x27, 0x19}; //10008
 	uint8_t default_Uuid[]={0xFD, 0xA5, 0x06, 0x93, 0xA4, 0xE2, 0x4F, 0xB1,
 	                        0xAF, 0xCF, 0xC6, 0xEB, 0x07, 0x64, 0x78, 0x25};
 	
@@ -84,10 +84,11 @@ static int DevInf_Snv_Init(uint8_t len)
 	memset(nvBuf, 0, sizeof(nvBuf));
 	
 	ptr->ibeaconinf_config.atFlag        = 0x00;
-	ptr->ibeaconinf_config.txPower       = 0;
-	ptr->ibeaconinf_config.txInterval    = 3;
+	ptr->ibeaconinf_config.txPower       = 6;
+	ptr->ibeaconinf_config.txInterval    = 10;
 	ptr->ibeaconinf_config.initFlag      = 0xFF - 1;
 	ptr->ibeaconinf_config.Rxp           = 0xB5;
+	ptr->ibeaconinf_config.sys_Mode      = 0;  //default adv mode
 	memcpy(ptr->ibeaconinf_config.majorValue, default_Major, sizeof(uint16_t));
 	memcpy(ptr->ibeaconinf_config.minorValue, default_Minor, sizeof(uint16_t));
     memcpy(ptr->ibeaconinf_config.uuidValue,  default_Uuid,  sizeof(default_Uuid));

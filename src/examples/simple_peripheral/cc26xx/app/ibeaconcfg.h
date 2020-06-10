@@ -35,7 +35,8 @@ typedef struct
     uint8_t uuidValue[16];
     uint8_t hwvr[4];
     uint8_t mDate[11];       
-    uint8_t initFlag;          
+    uint8_t initFlag; 
+    uint8_t sys_Mode;
 }ibeaconinf_config_t;
 
 typedef struct 

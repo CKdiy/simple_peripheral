@@ -112,9 +112,17 @@ PIN_Config keyPinsCfg[] =
     PIN_TERMINATE
 };
 
+PIN_Config LedPinsCfg[] =
+{
+	Board_DK_LED0       | PIN_GPIO_OUTPUT_EN   | PIN_INPUT_DIS |  PIN_GPIO_HIGH  |  PIN_PULLUP,    
+	PIN_TERMINATE
+};
+
 PIN_State  keyPins;
 PIN_Handle hKeyPins;
 
+PIN_State  LedPins;
+PIN_Handle hLedPins;
 /*********************************************************************
  * PUBLIC FUNCTIONS
  */
@@ -132,6 +140,7 @@ void Board_initKeys(keysPressedCB_t appKeyCB)
   // Initialize KEY pins. Enable int after callback registered
   hKeyPins = PIN_open(&keyPins, keyPinsCfg);
   PIN_registerIntCb(hKeyPins, Board_keyCallback);
+  hLedPins = PIN_open(&LedPins, LedPinsCfg);
 
 #if defined (CC2650_LAUNCHXL) || defined (CC1350_LAUNCHXL)
   PIN_setConfig(hKeyPins, PIN_BM_IRQ, Board_BTN1        | PIN_IRQ_NEGEDGE);
@@ -244,6 +253,23 @@ static void Board_keyChangeHandler(UArg a0)
     // Notify the application
     (*appKeyChangeHandler)(keysPressed);
   }
+}
+
+/*********************************************************************
+ * @fn      Board_LedCtrl
+ *
+ * @brief   Control Led light flashing
+ *
+ * @param   Board_LED_ON/Board_LED_OFF
+ *
+ * @return  none
+ */
+void Board_LedCtrl(uint8_t status)
+{
+	if(Board_LED_ON == status)
+		PIN_setOutputValue(hLedPins, Board_DK_LED0, 0);
+	else
+	  	PIN_setOutputValue(hLedPins, Board_DK_LED0, 1);
 }
 
 int Bord_GetKey_Pin_Status(void)
