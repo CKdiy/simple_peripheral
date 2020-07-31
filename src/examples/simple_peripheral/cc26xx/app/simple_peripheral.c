@@ -152,6 +152,8 @@
 
 #define SBP_PERIODIC_EVT_PERIOD_2s            2000 //2s
 
+#define RCOSC_CALIBRATION_PERIOD_1s           1000
+
 #ifdef FEATURE_OAD
 // The size of an OAD packet.
 #define OAD_PACKET_SIZE                       ((OAD_BLOCK_SIZE) + 2)
@@ -336,6 +338,92 @@ void wdtInitFxn(void);
  */
 extern void AssertHandler(uint8 assertCause, uint8 assertSubcause);
 
+
+static uint8_t isEnabled = FALSE;
+
+// Clock instance for Calibration injections
+static Clock_Struct  injectCalibrationClock;
+
+// Power Notify Object for wake-up callbacks
+Power_NotifyObj injectCalibrationPowerNotifyObj;
+
+/*********************************************************************
+ * @fn      rcosc_injectCalibrationClockHandler
+ *
+ * @brief   Handler function for RCOSC clock timeouts.  Executes in
+ *          SWI context.
+ *
+ * @param   arg - event type
+ *
+ * @return  None.
+ */
+static void rcosc_injectCalibrationClockHandler(UArg arg)
+{
+  // Restart clock.
+  Util_startClock(&injectCalibrationClock);
+
+  // Inject calibration.
+  PowerCC26XX_injectCalibration();
+}
+
+/*********************************************************************
+ * @fn      rcosc_injectCalibrationPostNotify
+ *
+ * @brief   Callback for Power module state change events.
+ *
+ * @param   eventType - The state change.
+ * @param   clientArg - Not used.
+ *
+ * @return  Power_NOTIFYDONE
+ */
+static uint8_t rcosc_injectCalibrationPostNotify(uint8_t eventType,
+                                                 uint32_t *eventArg,
+                                                 uint32_t *clientArg)
+{
+  // If clock is active at time of wake up,
+  if (Util_isActive(&injectCalibrationClock))
+  {
+    // Stop injection of calibration - the wakeup has automatically done this.
+    Util_stopClock(&injectCalibrationClock);
+  }
+
+  // Restart the clock in case delta between now and next wake up is greater
+  // than one second.
+  Util_startClock(&injectCalibrationClock);
+
+  return Power_NOTIFYDONE;
+}
+
+/*********************************************************************
+ * @fn      RCOSC_enableCalibration
+ *
+ * @brief   enable calibration.  calibration timer will start immediately.
+ *
+ * @param   none
+ *
+ * @return  none
+ */
+void RCOSC_enableCalibration(void)
+{
+  if (!isEnabled)
+  {
+    isEnabled = TRUE;
+
+    // Set device's Sleep Clock Accuracy
+    HCI_EXT_SetSCACmd(1000);
+	
+    // Create RCOSC clock - one-shot clock for calibration injections.
+    Util_constructClock(&injectCalibrationClock, rcosc_injectCalibrationClockHandler,
+                        RCOSC_CALIBRATION_PERIOD_1s, 0, false, 0);
+	
+    // Receive callback when device wakes up from Standby Mode.
+    Power_registerNotify(&injectCalibrationPowerNotifyObj, PowerCC26XX_AWAKE_STANDBY,
+                         (Power_NotifyFxn)rcosc_injectCalibrationPostNotify, NULL);
+	
+	Util_startClock(&injectCalibrationClock);
+  }
+} 
+
 /*********************************************************************
  * PROFILE CALLBACKS
  */
@@ -411,6 +499,8 @@ static void SimpleBLEPeripheral_init(void)
 
   // Create an RTOS queue for message from profile to be sent to app.
   appMsgQueue = Util_constructQueue(&appMsg);
+
+  RCOSC_enableCalibration();
 
   // Create one-shot clocks for internal periodic events.
   Util_constructClock(&periodicClock, SimpleBLEPeripheral_clockHandler,
