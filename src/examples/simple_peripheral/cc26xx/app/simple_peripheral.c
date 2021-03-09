@@ -449,9 +449,8 @@ static void SimpleBLEPeripheral_init(void)
   else
   {
 	Board_initKeys(SimpleBLEObserver_keyChangeHandler);
-	
-  	Power_releaseConstraint(PowerCC26XX_SB_DISALLOW);
-	Power_releaseConstraint(PowerCC26XX_IDLE_PD_DISALLOW);
+//  	Power_releaseConstraint(PowerCC26XX_SB_DISALLOW);
+//	Power_releaseConstraint(PowerCC26XX_IDLE_PD_DISALLOW);
   }
   
 #ifdef IWDG_ENABLE
@@ -1481,7 +1480,7 @@ static void SimpleBLEPeripheral_uart0Task(void)
 			
 			ibeaconInf_Config.atFlag = 0xFF -1;
 			
-			ibeaconInf_Config.sys_Mode = SLEEP_MODE;
+			ibeaconInf_Config.sys_Mode = ADV_MODE;
 			
 			Ble_WriteNv_Inf( BLE_NVID_CUST_START, &ibeaconInf_Config.txPower);
 			
@@ -1498,7 +1497,7 @@ static void SimpleBLEPeripheral_uart0Task(void)
 	
 	if( TRUE == restart )
 	{
-		HCI_EXT_ResetSystemCmd(HCI_EXT_RESET_SYSTEM_HARD);		
+		Util_restartClock(&sysRestarClock, SBP_PERIODIC_EVT_PERIOD_1s);		
 	}
 }
 
